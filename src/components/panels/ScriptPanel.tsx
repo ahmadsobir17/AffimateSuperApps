@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, AlignLeft, Hash, UploadCloud, X, Sparkles, Crown, Lock, Scissors, Timer, Copy, Mic } from 'lucide-react';
+import { FileText, AlignLeft, Hash, UploadCloud, X, Sparkles, Crown, Lock, Scissors, Timer, Copy } from 'lucide-react';
 import { useApp } from '@/lib/context';
 import { generateScriptOR, analyzeProductOR, fileToBase64 } from '@/lib/apiOpenRouter';
 import {
@@ -11,7 +11,6 @@ import {
     TONE_OPTIONS,
     LANGUAGE_OPTIONS,
     STRUCTURE_OPTIONS,
-    TTS_VOICES,
     PRICING,
 } from '@/lib/constants';
 import GlassPanel from '@/components/ui/GlassPanel';
@@ -43,15 +42,9 @@ export default function ScriptPanel() {
     const [veoDuration, setVeoDuration] = useState('5 seconds');
     const [veoSceneCount, setVeoSceneCount] = useState(5);
 
-    // TTS State
-    const [ttsVoice, setTtsVoice] = useState('Kore');
-    const [ttsTemp, setTtsTemp] = useState(1.0);
-    const [audioUrl, setAudioUrl] = useState<string | null>(null);
-
     // Result State
     const [isLoading, setIsLoading] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [isTtsLoading, setIsTtsLoading] = useState(false);
     const [result, setResult] = useState('');
 
     const handleImageUpload = async (files: FileList) => {
@@ -172,56 +165,7 @@ SCENE 2... (and so on)`;
         }
     };
 
-    const handleGenerateTTS = async () => {
-        if (!result) {
-            showToast('Generate script/caption dulu!', 'error');
-            return;
-        }
 
-
-        if (!deductBalance(PRICING.TTS)) return;
-        setIsTtsLoading(true);
-        try {
-            // Extract audio text from script
-            let textToSpeak = '';
-            const lines = result.split('\n');
-            const cleanLines: string[] = [];
-
-            lines.forEach((line) => {
-                if (line.match(/^(?:AUDIO|NARASI|NARRATOR|VO|VOICEOVER|HOST|SPEAKER)\s*:/i)) {
-                    let cleanLine = line.replace(/^(?:AUDIO|NARASI|NARRATOR|VO|VOICEOVER|HOST|SPEAKER)\s*:\s*/i, '');
-                    cleanLine = cleanLine.replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '');
-                    cleanLine = cleanLine.replace(/["*_#\-]/g, '').trim();
-                    if (cleanLine.length > 1) cleanLines.push(cleanLine);
-                }
-            });
-
-            textToSpeak = cleanLines.join('. ');
-
-            if (cleanLines.length === 0) {
-                textToSpeak = result
-                    .replace(/VISUAL:.*$/gim, '')
-                    .replace(/SCENE \d+/gim, '')
-                    .replace(/\[.*?\]/g, '')
-                    .replace(/["*_#]/g, '')
-                    .trim();
-            }
-
-            if (!textToSpeak || textToSpeak.length < 2) {
-                throw new Error('Gagal mendeteksi dialog di script.');
-            }
-
-            // TTS not available on OpenRouter yet - show message
-            showToast('TTS sedang dalam pengembangan untuk OpenRouter.', 'error');
-            // For now, skip TTS
-            // const blob = await generateTTS(textToSpeak, ttsVoice, ttsTemp);
-            throw new Error('TTS belum tersedia via OpenRouter. Gunakan service TTS external seperti ElevenLabs.');
-        } catch (error) {
-            showToast('TTS Error: ' + (error as Error).message, 'error');
-        } finally {
-            setIsTtsLoading(false);
-        }
-    };
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(result);
@@ -462,78 +406,7 @@ SCENE 2... (and so on)`;
                             </div>
                         </Button>
 
-                        {/* TTS Section */}
-                        {mode === 'script' && (
-                            <>
-                                <hr className="border-slate-700 my-4" />
-                                <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <label className="text-xs text-slate-400 font-bold">Voice Over Settings</label>
-                                        <span className="text-[10px] text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
-                                            Beta
-                                        </span>
-                                    </div>
 
-                                    <div className="space-y-3">
-                                        <div>
-                                            <label className="block text-[10px] text-slate-400 mb-1">Pilih Karakter Suara</label>
-                                            <select
-                                                value={ttsVoice}
-                                                onChange={(e) => setTtsVoice(e.target.value)}
-                                                className="w-full px-2 py-1.5 rounded text-xs bg-slate-800 border border-slate-700 text-white"
-                                            >
-                                                <optgroup label="✅ Free Voices (Terbuka)">
-                                                    {TTS_VOICES.free.map((v) => (
-                                                        <option key={v.value} value={v.value}>{v.label}</option>
-                                                    ))}
-                                                </optgroup>
-                                                <optgroup label="👑 Premium Voices (Terbuka)">
-                                                    {TTS_VOICES.premium.map((v) => (
-                                                        <option key={v.value} value={v.value}>{v.label}</option>
-                                                    ))}
-                                                </optgroup>
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <div className="flex justify-between mb-1">
-                                                <label className="text-[10px] text-slate-400">Ekspresi (Temperature)</label>
-                                                <span className="text-[10px] text-red-400 font-mono">{ttsTemp}</span>
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min="0"
-                                                max="2"
-                                                step="0.1"
-                                                value={ttsTemp}
-                                                onChange={(e) => setTtsTemp(parseFloat(e.target.value))}
-                                                className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-500"
-                                            />
-                                            <p className="text-[9px] text-slate-500 mt-1">
-                                                0.0 = Stabil | 1.0 = Normal | 2.0 = Sangat Ekspresif
-                                            </p>
-                                        </div>
-
-                                        <Button
-                                            variant="secondary"
-                                            onClick={handleGenerateTTS}
-                                            isLoading={isTtsLoading}
-                                            icon={<Mic className="w-4 h-4" />}
-                                            className="w-full relative overflow-hidden group"
-                                        >
-                                            <div className="flex flex-col items-center">
-                                                <span>{isTtsLoading ? 'Generating Audio...' : 'Generate Suara (TTS)'}</span>
-                                                {!isTtsLoading && <span className="text-[10px] opacity-70">Biaya: ${PRICING.TTS}</span>}
-                                            </div>
-                                        </Button>
-
-                                        {audioUrl && (
-                                            <audio controls src={audioUrl} className="w-full mt-3 h-8" />
-                                        )}
-                                    </div>
-                                </div>
-                            </>
-                        )}
                     </div>
                 </GlassPanel>
             </div>
