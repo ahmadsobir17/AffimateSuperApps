@@ -213,7 +213,6 @@ async function generateImageOpenRouter(
         body: JSON.stringify({
             model: IMAGE_GENERATION_MODEL,
             messages: [{ role: 'user', content: contentParts }],
-            modalities: ['text', 'image'],
         }),
     });
 
