@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, DollarSign, Wallet, ArrowRight, Zap, CheckCircle2, QrCode, CreditCard, Sparkles } from 'lucide-react';
 import { useApp } from '@/lib/context';
+import { API_BASE_URL } from '@/lib/apiConfig';
 import GlassPanel from './ui/GlassPanel';
 import Button from './ui/Button';
 import { Input } from './ui/Input';
@@ -57,7 +58,8 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
             };
 
             // Use Workers API if configured, otherwise fallback to local (for dev)
-            const checkoutUrl = apiUrl ? `${apiUrl}/duitku/checkout` : '/api/duitku/checkout';
+            // Use Workers API
+            const checkoutUrl = `${API_BASE_URL}/duitku/checkout`;
 
             const response = await fetch(checkoutUrl, {
                 method: 'POST',
