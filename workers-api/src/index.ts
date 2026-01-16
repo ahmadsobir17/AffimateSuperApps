@@ -208,14 +208,18 @@ async function generateImageKieAI(
     try {
         const createTaskUrl = 'https://api.kie.ai/api/v1/jobs/createTask';
 
-        // Prepare input object
+        // Prepare enhanced prompt to prevent hallucinations (like bags instead of shirts)
+        let finalPrompt = prompt;
+        if (inputImages && inputImages.length > 0) {
+            finalPrompt = `STRICTLY PRESERVE THE ORIGINAL PRODUCT. Use the uploaded image as the SUBJECT. Place this EXACT product into a ${prompt} environment. DO NOT change the product's shape, color, or material. The output MUST contain the exact same product from the input image. No bags, no random objects, only the original product.`;
+        }
+
         const input: any = {
-            prompt: prompt,
+            prompt: finalPrompt,
             output_format: 'png',
-            image_size: '1:1'
+            aspect_ratio: '1:1'
         };
 
-        // If reference images are provided (image-to-image)
         if (inputImages && inputImages.length > 0) {
             input.image = inputImages[0].startsWith('data:') ? inputImages[0] : `data:image/png;base64,${inputImages[0]}`;
         }
@@ -227,7 +231,7 @@ async function generateImageKieAI(
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'google/nano-banana',
+                model: 'google/nano-banana-pro', // Using PRO for better product consistency
                 input: input
             })
         });
@@ -241,17 +245,12 @@ async function generateImageKieAI(
         const createData = await createResp.json() as any;
         const taskId = createData.data?.taskId;
 
-        if (!taskId) {
-            console.error('Kie.ai: No taskId returned', createData);
-            return null;
-        }
+        if (!taskId) return null;
 
-        // Poll for results
         const pollUrl = `https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`;
 
-        for (let i = 0; i < 20; i++) { // Increase polling attempts (max ~40 seconds)
+        for (let i = 0; i < 25; i++) {
             await new Promise(r => setTimeout(r, 2000));
-
             const pollResp = await fetch(pollUrl, {
                 headers: { 'Authorization': `Bearer ${apiKey}` }
             });
@@ -275,9 +274,7 @@ async function generateImageKieAI(
                 console.error('Kie.ai: Task failed', pollData.data?.errorMsg);
                 break;
             }
-            // If still processing, continue loop
         }
-
         return null;
     } catch (error) {
         console.error('Kie.ai Exception:', error);
