@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /payment/success
+
+Sitemap: https://affimate.id/sitemap.xml

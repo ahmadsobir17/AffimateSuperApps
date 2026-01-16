@@ -1,0 +1,17 @@
+{
+    "name": "Affimate Super App",
+    "short_name": "Affimate",
+    "description": "AI Super App for Content Creators and Affiliators",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#050911",
+    "theme_color": "#ef4444",
+    "icons": [
+        {
+            "src": "https://cdn-icons-png.flaticon.com/512/10044/10044823.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
