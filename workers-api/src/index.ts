@@ -19,12 +19,19 @@ async function md5(message: string): Promise<string> {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// CORS headers
-function corsHeaders(origin: string) {
+// CORS headers - Updated to be dynamic
+function corsHeaders(request: Request, env: Env) {
+    const origin = request.headers.get('Origin');
+    // Allow the configured origin OR any localhost origin for development
+    const allowedOrigin = (origin && (origin === env.CORS_ORIGIN || origin.includes('localhost')))
+        ? origin
+        : env.CORS_ORIGIN;
+
     return {
-        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Origin': allowedOrigin,
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '86400',
     };
 }
 
@@ -40,7 +47,16 @@ interface OpenRouterMessage {
 // Handle LLM requests via OpenRouter
 async function handleLLM(request: Request, env: Env): Promise<Response> {
     try {
-        const body = await request.json() as any;
+        let body: any;
+        try {
+            body = await request.json();
+        } catch (e) {
+            return new Response(JSON.stringify({ success: false, error: 'Invalid JSON body' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json', ...corsHeaders(request, env) }
+            });
+        }
+
         const { action, messages, prompt, systemPrompt, imageBase64, inputImages, model, temperature, maxTokens, backImage, customModelImage } = body;
 
         const apiKey = env.OPENROUTER_API_KEY;
@@ -49,7 +65,7 @@ async function handleLLM(request: Request, env: Env): Promise<Response> {
         if (!apiKey) {
             return new Response(JSON.stringify({ success: false, error: 'OpenRouter API key not configured' }), {
                 status: 500,
-                headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) }
+                headers: { 'Content-Type': 'application/json', ...corsHeaders(request, env) }
             });
         }
 
@@ -60,7 +76,7 @@ async function handleLLM(request: Request, env: Env): Promise<Response> {
             case 'chat':
                 if (!messages) {
                     return new Response(JSON.stringify({ success: false, error: 'Messages required' }), {
-                        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) }
+                        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(request, env) }
                     });
                 }
                 result = await callOpenRouter(apiKey, selectedModel, messages, temperature, maxTokens);
@@ -69,7 +85,7 @@ async function handleLLM(request: Request, env: Env): Promise<Response> {
             case 'generate':
                 if (!prompt) {
                     return new Response(JSON.stringify({ success: false, error: 'Prompt required' }), {
-                        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) }
+                        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(request, env) }
                     });
                 }
                 const genMessages: OpenRouterMessage[] = [];
@@ -81,7 +97,7 @@ async function handleLLM(request: Request, env: Env): Promise<Response> {
             case 'vision':
                 if (!imageBase64 || !prompt) {
                     return new Response(JSON.stringify({ success: false, error: 'imageBase64 and prompt required' }), {
-                        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) }
+                        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(request, env) }
                     });
                 }
                 const visionMessages: OpenRouterMessage[] = [{
@@ -97,7 +113,7 @@ async function handleLLM(request: Request, env: Env): Promise<Response> {
             case 'image':
                 if (!prompt) {
                     return new Response(JSON.stringify({ success: false, error: 'Prompt required' }), {
-                        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) }
+                        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(request, env) }
                     });
                 }
                 result = await generateImageOpenRouter(apiKey, prompt, inputImages);
@@ -106,7 +122,7 @@ async function handleLLM(request: Request, env: Env): Promise<Response> {
             case 'product-image':
                 if (!prompt || !imageBase64) {
                     return new Response(JSON.stringify({ success: false, error: 'prompt and imageBase64 required' }), {
-                        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) }
+                        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(request, env) }
                     });
                 }
                 const productImages = [imageBase64];
@@ -117,18 +133,18 @@ async function handleLLM(request: Request, env: Env): Promise<Response> {
 
             default:
                 return new Response(JSON.stringify({ success: false, error: 'Invalid action' }), {
-                    status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) }
+                    status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(request, env) }
                 });
         }
 
         return new Response(JSON.stringify({ success: true, result, model: selectedModel }), {
-            headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) }
+            headers: { 'Content-Type': 'application/json', ...corsHeaders(request, env) }
         });
 
     } catch (error) {
         console.error('LLM Error:', error);
         return new Response(JSON.stringify({ success: false, error: (error as Error).message }), {
-            status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) }
+            status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders(request, env) }
         });
     }
 }
@@ -266,7 +282,7 @@ async function handleCheckout(request: Request, env: Env): Promise<Response> {
 
         const data = await response.json();
         return new Response(JSON.stringify(data), {
-            headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) }
+            headers: { 'Content-Type': 'application/json', ...corsHeaders(request, env) }
         });
     } catch (error) {
         console.error('Checkout Error:', error);
@@ -324,7 +340,7 @@ export default {
 
         // Handle CORS preflight
         if (request.method === 'OPTIONS') {
-            return new Response(null, { headers: corsHeaders(env.CORS_ORIGIN) });
+            return new Response(null, { headers: corsHeaders(request, env) });
         }
 
         // LLM Routes
@@ -349,7 +365,7 @@ export default {
                 endpoints: ['/llm', '/duitku/checkout', '/payment/callback'],
                 hasOpenRouterKey: !!env.OPENROUTER_API_KEY,
             }), {
-                headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) }
+                headers: { 'Content-Type': 'application/json', ...corsHeaders(request, env) }
             });
         }
 
