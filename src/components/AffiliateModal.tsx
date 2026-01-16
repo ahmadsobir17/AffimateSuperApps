@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Copy, Users, DollarSign, Gift, ArrowRight, Link } from 'lucide-react';
 import { useApp } from '@/lib/context';
+import { useLanguage } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -15,6 +16,7 @@ interface AffiliateModalProps {
 
 export default function AffiliateModal({ isOpen, onClose }: AffiliateModalProps) {
     const { user, showToast, referralCode, referralEarnings } = useApp();
+    const { t } = useLanguage();
     const [redeemCode, setRedeemCode] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [hasRefInUrl, setHasRefInUrl] = useState(false);
@@ -35,7 +37,7 @@ export default function AffiliateModal({ isOpen, onClose }: AffiliateModalProps)
         if (referralCode) {
             const link = `https://affimate.axiamasi.com/?ref=${referralCode}`;
             navigator.clipboard.writeText(link);
-            showToast('Link referral disalin!', 'success');
+            showToast(t('affiliate.linkCopied'), 'success');
         }
     };
 
@@ -48,14 +50,14 @@ export default function AffiliateModal({ isOpen, onClose }: AffiliateModalProps)
             if (error) throw error;
 
             if (data === 'SUCCESS') {
-                showToast('Referral berhasil diaktifkan!', 'success');
+                showToast(t('affiliate.success'), 'success');
                 setRedeemCode('');
             } else if (data === 'ALREADY_REFERRED') {
-                showToast('Kamu sudah pernah memasukkan kode referral.', 'error');
+                showToast(t('affiliate.alreadyReferred'), 'error');
             } else if (data === 'INVALID_CODE') {
-                showToast('Kode referral tidak ditemukan.', 'error');
+                showToast(t('affiliate.invalidCode'), 'error');
             } else if (data === 'SELF_REFERRAL') {
-                showToast('Tidak bisa memasukkan kode sendiri.', 'error');
+                showToast(t('affiliate.selfReferral'), 'error');
             }
         } catch (error) {
             showToast('Gagal redeem: ' + (error as Error).message, 'error');
@@ -98,8 +100,8 @@ export default function AffiliateModal({ isOpen, onClose }: AffiliateModalProps)
                             <Users className="w-6 h-6" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-white">Affiliate Program</h2>
-                            <p className="text-xs text-slate-400">Undang teman, dapat cuan.</p>
+                            <h2 className="text-xl font-bold text-white">{t('affiliate.title')}</h2>
+                            <p className="text-xs text-slate-400">{t('affiliate.subtitle')}</p>
                         </div>
                     </div>
 
@@ -107,35 +109,35 @@ export default function AffiliateModal({ isOpen, onClose }: AffiliateModalProps)
                         {/* Stats Card */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-                                <div className="text-xs text-slate-400 mb-1">Total Pendapatan</div>
+                                <div className="text-xs text-slate-400 mb-1">{t('affiliate.earnings')}</div>
                                 <div className="text-2xl font-bold text-green-400 flex items-center gap-1">
                                     <DollarSign className="w-5 h-5" />
                                     {referralEarnings.toFixed(2)}
                                 </div>
                             </div>
                             <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-                                <div className="text-xs text-slate-400 mb-1">Komisi Kamu</div>
+                                <div className="text-xs text-slate-400 mb-1">{t('affiliate.commission')}</div>
                                 <div className="text-2xl font-bold text-white">10%</div>
-                                <div className="text-[10px] text-green-400">Seumur Hidup / User</div>
+                                <div className="text-[10px] text-green-400">{t('affiliate.lifetime')}</div>
                             </div>
                         </div>
 
                         {/* Your Link */}
                         <div className="space-y-2">
-                            <label className="text-xs text-slate-400 font-bold uppercase tracking-wider">Link Referral Kamu</label>
+                            <label className="text-xs text-slate-400 font-bold uppercase tracking-wider">{t('affiliate.yourLink')}</label>
                             <div
                                 onClick={handleCopy}
                                 className="flex items-center justify-between bg-slate-900 border-2 border-dashed border-slate-700 rounded-xl p-4 cursor-pointer hover:border-green-500 group transition-all"
                             >
                                 <code className="text-xs sm:text-sm font-bold text-white truncate max-w-[220px]">
-                                    {referralCode ? `https://affimate.axiamasi.com/?ref=${referralCode}` : 'LOADING...'}
+                                    {referralCode ? `https://affimate.axiamasi.com/?ref=${referralCode}` : t('common.loading')}
                                 </code>
                                 <div className="p-2 bg-slate-800 rounded-lg group-hover:bg-green-500 group-hover:text-black transition-colors shrink-0">
                                     <Copy className="w-5 h-5" />
                                 </div>
                             </div>
                             <p className="text-[10px] text-slate-500 text-center">
-                                Klik untuk menyalin link. Bagikan ke temanmu!
+                                {t('affiliate.copyHint')}
                             </p>
                         </div>
 
@@ -145,13 +147,13 @@ export default function AffiliateModal({ isOpen, onClose }: AffiliateModalProps)
                         <div className="space-y-3">
                             <div className="flex items-center gap-2 text-yellow-500">
                                 <Gift className="w-4 h-4" />
-                                <span className="text-xs font-bold uppercase">Punya Kode Undangan?</span>
+                                <span className="text-xs font-bold uppercase">{t('affiliate.haveCode')}</span>
                             </div>
                             <div className="flex gap-2">
                                 <Input
                                     value={redeemCode}
                                     onChange={(e) => setRedeemCode(e.target.value)}
-                                    placeholder="Masukkan kode temanmu..."
+                                    placeholder={t('affiliate.enterCode')}
                                     className="bg-slate-900 border-slate-700 focus:border-yellow-500 text-center uppercase font-bold tracking-widest"
                                 />
                                 <Button

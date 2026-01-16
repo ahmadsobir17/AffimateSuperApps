@@ -15,6 +15,17 @@ const nextConfig: NextConfig = {
   */
   // @ts-ignore
   turbopack: {},
+
+  // For Cloudflare Pages static export
+  output: 'export',
+
+  // Disable image optimization for static export
+  images: {
+    unoptimized: true,
+  },
+
+  // Trailing slashes for static hosting
+  trailingSlash: true,
 };
 
 module.exports = withPWA(nextConfig);

@@ -8,6 +8,7 @@ import GlassPanel from './ui/GlassPanel';
 import Button from './ui/Button';
 import { Input } from './ui/Input';
 import CryptoJS from 'crypto-js';
+import { useLanguage } from '@/lib/i18n';
 
 interface TopUpModalProps {
     isOpen: boolean;
@@ -23,6 +24,7 @@ const TOP_UP_PACKAGES = [
 
 export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
     const { userEmail, showToast, exchangeRate } = useApp();
+    const { t } = useLanguage();
     const [selectedPackage, setSelectedPackage] = useState<typeof TOP_UP_PACKAGES[0] | null>(null);
     const [customAmount, setCustomAmount] = useState<string>('');
     const [paymentMethod, setPaymentMethod] = useState<'VC' | 'SP'>('SP'); // VC: Card, SP: QRIS (ShopeePay)
@@ -34,23 +36,30 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
     const activeUsdAmount = selectedPackage ? selectedPackage.usd : parseFloat((activeIdrAmount / 15000).toFixed(2));
 
     const handleDuitkuCheckout = async () => {
-        if (activeIdrAmount < 10000) {
-            showToast('Minimal top up Rp 10.000', 'error');
+        if (activeIdrAmount < 5000) {
+            showToast(t('topup.errorMin'), 'error');
             return;
         }
 
         setIsLoading(true);
 
         try {
+            // Get API URL from environment or use default
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
             const payload = {
                 paymentAmount: activeIdrAmount,
                 paymentMethod,
                 productDetails: `Top Up $${activeUsdAmount} Affimate Balance`,
                 email: userEmail || 'guest@affimate.com',
-                customerVaName: userEmail?.split('@')[0] || 'Affimate User'
+                customerVaName: userEmail?.split('@')[0] || 'Affimate User',
+                returnUrl: `${window.location.origin}/payment/success`
             };
 
-            const response = await fetch('/api/duitku/checkout', {
+            // Use Workers API if configured, otherwise fallback to local (for dev)
+            const checkoutUrl = apiUrl ? `${apiUrl}/duitku/checkout` : '/api/duitku/checkout';
+
+            const response = await fetch(checkoutUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -60,7 +69,7 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
             console.log('Checkout Response:', data);
 
             if (data?.paymentUrl) {
-                showToast('Mengarahkan ke halaman pembayaran...', 'success');
+                showToast(t('toast.redirectPayment'), 'success');
                 window.location.href = data.paymentUrl;
             } else {
                 const errorMsg = data.statusMessage || 'Gagal membuat transaksi';
@@ -69,7 +78,7 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
             }
         } catch (error) {
             console.error('Payment Error:', error);
-            showToast('Gagal memproses pembayaran. Silakan coba lagi.', 'error');
+            showToast(t('toast.paymentError'), 'error');
         } finally {
             setIsLoading(false);
         }
@@ -104,9 +113,9 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                                         <div className="bg-emerald-500/20 p-2 rounded-xl">
                                             <DollarSign className="w-8 h-8 text-emerald-500" />
                                         </div>
-                                        Isi Ulang Saldo
+                                        {t('topup.title')}
                                     </h2>
-                                    <p className="text-slate-400 mt-2">Pilih paket atau masukkan jumlah custom yang kamu mau.</p>
+                                    <p className="text-slate-400 mt-2">{t('topup.description')}</p>
                                 </div>
                                 <button
                                     onClick={onClose}
@@ -151,7 +160,7 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                                     <div className="relative">
                                         <div className="flex items-center gap-2 mb-3 text-xs font-bold text-slate-500 uppercase tracking-widest">
                                             <Sparkles className="w-3 h-3 text-yellow-500" />
-                                            <span>Atau Masukkan Custom Amount</span>
+                                            <span>{t('topup.customAmount')}</span>
                                         </div>
                                         <div className="relative group">
                                             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-red-500 transition-colors font-bold text-sm">
@@ -170,13 +179,14 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                                                 className="w-full bg-slate-900/50 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white font-bold focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/30 transition-all placeholder:text-slate-700"
                                             />
                                         </div>
+                                        <p className="text-[10px] text-slate-500 mt-2">{t('topup.minAmount')}</p>
                                     </div>
                                 </div>
 
                                 {/* Right Side: Method & Review */}
                                 <div className="lg:col-span-5 space-y-6">
                                     <div className="space-y-3">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Metode Pembayaran</label>
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('topup.paymentMethod')}</label>
                                         <div className="space-y-2">
                                             <div
                                                 onClick={() => setPaymentMethod('SP')}
@@ -189,7 +199,7 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                                                     </div>
                                                     <div>
                                                         <span className="text-sm font-bold text-white block">QRIS</span>
-                                                        <span className="text-[10px] text-slate-500">Scan via Dana, OVO, ShopeePay...</span>
+                                                        <span className="text-[10px] text-slate-500">{t('topup.qris')}</span>
                                                     </div>
                                                 </div>
                                                 {paymentMethod === 'SP' && <CheckCircle2 className="w-5 h-5 text-red-500" />}
@@ -205,8 +215,8 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                                                         <CreditCard className="w-5 h-5 text-red-500" />
                                                     </div>
                                                     <div>
-                                                        <span className="text-sm font-bold text-white block">Kartu Kredit</span>
-                                                        <span className="text-[10px] text-slate-500">Visa, Mastercard, JCB...</span>
+                                                        <span className="text-sm font-bold text-white block">{t('topup.creditCard')}</span>
+                                                        <span className="text-[10px] text-slate-500">{t('topup.creditCardDesc')}</span>
                                                     </div>
                                                 </div>
                                                 {paymentMethod === 'VC' && <CheckCircle2 className="w-5 h-5 text-red-500" />}
@@ -217,12 +227,12 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                                     <div className="bg-slate-900/80 rounded-2xl p-6 border border-white/5 space-y-4">
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-center text-xs">
-                                                <span className="text-slate-500">Estimasi Saldo</span>
+                                                <span className="text-slate-500">{t('topup.estimatedBalance')}</span>
                                                 <span className="text-emerald-400 font-bold text-lg">${activeUsdAmount}</span>
                                             </div>
                                             <div className="h-px bg-white/5 my-2" />
                                             <div className="flex justify-between items-center">
-                                                <span className="text-sm text-slate-400 font-bold">Total Pembayaran</span>
+                                                <span className="text-sm text-slate-400 font-bold">{t('topup.totalPayment')}</span>
                                                 <span className="text-red-500 font-black text-2xl">
                                                     Rp {activeIdrAmount.toLocaleString('id-ID')}
                                                 </span>
@@ -235,9 +245,9 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                                             className="w-full py-5 text-lg shadow-2xl"
                                             variant="primary"
                                             icon={<ArrowRight className="w-5 h-5" />}
-                                            disabled={activeIdrAmount < 10000}
+                                            disabled={activeIdrAmount < 5000}
                                         >
-                                            Bayar Sekarang
+                                            {t('topup.payNow')}
                                         </Button>
 
                                         <div className="flex items-center justify-center pt-2">

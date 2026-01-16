@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, UserCheck, Sparkles, Crown, Lock } from 'lucide-react';
 import { useApp } from '@/lib/context';
+import { useLanguage } from '@/lib/i18n';
 import { generateCharacter } from '@/lib/api';
 import {
     CHARACTER_STYLES,
@@ -23,6 +24,7 @@ import LoaderOverlay from '@/components/ui/Loader';
 
 export default function CharacterPanel() {
     const { isTrialMode, activeGender, setActiveGender, showToast, apiKey, deductBalance } = useApp();
+    const { t } = useLanguage();
 
     // Form State
     const [style, setStyle] = useState('Photorealistic');
@@ -83,14 +85,14 @@ export default function CharacterPanel() {
             <div className="lg:col-span-4 space-y-4">
                 <GlassPanel className="p-5">
                     <h2 className="text-red-500 font-semibold mb-4 text-sm uppercase tracking-wider flex items-center gap-2">
-                        <User className="w-4 h-4" /> Membuat Karakter AI
+                        <User className="w-4 h-4" /> {t('char.title')}
                     </h2>
 
                     <div className="space-y-4">
                         {/* Gender Selection */}
                         <div>
                             <label className="text-xs text-slate-400 font-medium mb-2 block">
-                                1. Gender (Basic)
+                                1. {t('char.gender')}
                             </label>
                             <div className="grid grid-cols-2 gap-3">
                                 {(['Male', 'Female'] as const).map((gender) => (
@@ -109,7 +111,7 @@ export default function CharacterPanel() {
                                         ) : (
                                             <UserCheck className="w-5 h-5" />
                                         )}
-                                        {gender === 'Male' ? 'Pria' : 'Wanita'}
+                                        {gender === 'Male' ? t('char.male') : t('char.female')}
                                     </motion.button>
                                 ))}
                             </div>
@@ -120,51 +122,51 @@ export default function CharacterPanel() {
                             <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-700">
                                 <Sparkles className="w-3 h-3 text-red-500" />
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                    Detail Karakter
+                                    {t('char.detailSection')}
                                 </span>
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="col-span-2">
                                     <Select
-                                        label="Visual Style"
+                                        label={t('char.style')}
                                         options={CHARACTER_STYLES}
                                         value={style}
                                         onChange={(e) => setStyle(e.target.value)}
                                     />
                                 </div>
                                 <Select
-                                    label="Umur (Age)"
+                                    label={t('char.age')}
                                     options={AGE_OPTIONS}
                                     value={age}
                                     onChange={(e) => setAge(e.target.value)}
                                 />
                                 <Select
-                                    label="Ras / Etnis"
+                                    label={t('char.ethnicity')}
                                     options={ETHNICITY_OPTIONS}
                                     value={ethnicity}
                                     onChange={(e) => setEthnicity(e.target.value)}
                                 />
                                 <Select
-                                    label="Gaya Rambut"
+                                    label={t('char.hairStyle')}
                                     options={HAIR_STYLES}
                                     value={hair}
                                     onChange={(e) => setHair(e.target.value)}
                                 />
                                 <Select
-                                    label="Warna Rambut"
+                                    label={t('char.hairColor')}
                                     options={HAIR_COLORS}
                                     value={hairColor}
                                     onChange={(e) => setHairColor(e.target.value)}
                                 />
                                 <Select
-                                    label="Bentuk Tubuh"
+                                    label={t('char.bodyType')}
                                     options={BODY_TYPES}
                                     value={body}
                                     onChange={(e) => setBody(e.target.value)}
                                 />
                                 <Select
-                                    label="Gaya Pakaian"
+                                    label={t('char.outfit')}
                                     options={OUTFIT_OPTIONS}
                                     value={outfit}
                                     onChange={(e) => setOutfit(e.target.value)}
@@ -174,10 +176,10 @@ export default function CharacterPanel() {
 
                         {/* Prompt Input */}
                         <Textarea
-                            label="Aktivitas & Lokasi (Opsional)"
+                            label={t('char.activity')}
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
-                            placeholder="isi sesuai keinginan mu..."
+                            placeholder={t('char.activityPlaceholder')}
                             className="h-20"
                         />
 
@@ -189,10 +191,10 @@ export default function CharacterPanel() {
                             className="w-full relative overflow-hidden group"
                         >
                             <div className="flex flex-col items-center">
-                                <span>{isLoading ? 'Generating...' : 'Generate Character'}</span>
+                                <span>{isLoading ? t('panel.generating') : t('char.generateBtn')}</span>
                                 {!isLoading && (
                                     <span className="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">
-                                        Costs ${PRICING.CHARACTER}
+                                        {t('panel.cost')} ${PRICING.CHARACTER}
                                     </span>
                                 )}
                             </div>
@@ -223,8 +225,8 @@ export default function CharacterPanel() {
                     ) : (
                         <div className="flex-grow flex flex-col items-center justify-center text-slate-500 h-full">
                             <User className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                            <p className="text-lg font-medium">Karakter Kosong</p>
-                            <p className="text-sm opacity-75">Isi detail dan mulai generate</p>
+                            <p className="text-lg font-medium">{t('char.empty')}</p>
+                            <p className="text-sm opacity-75">{t('char.emptyHint')}</p>
                         </div>
                     )}
                 </GlassPanel>

@@ -1,8 +1,9 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, LogOut, DollarSign, Plus, Menu, X, User, Camera, FileText, Video, Gift } from 'lucide-react';
+import { Zap, LogOut, DollarSign, Plus, Menu, X, User, Camera, FileText, Video, Gift, Globe } from 'lucide-react';
 import { useApp } from '@/lib/context';
+import { useLanguage, Language } from '@/lib/i18n';
 import { useState } from 'react';
 import { PanelType } from '@/types';
 import AffiliateModal from './AffiliateModal';
@@ -11,17 +12,25 @@ interface HeaderProps {
     onTopUp?: () => void;
 }
 
-const navItems: { id: PanelType; label: string; icon: any }[] = [
-    { id: 'character', label: 'Character', icon: User },
-    { id: 'image', label: 'Foto Studio', icon: Camera },
-    { id: 'script', label: 'Script & VO', icon: FileText },
-    { id: 'veo', label: 'VEO Vision', icon: Video },
+const navItems: { id: PanelType; labelKey: string; icon: any }[] = [
+    { id: 'character', labelKey: 'panel.character', icon: User },
+    { id: 'image', labelKey: 'panel.studio', icon: Camera },
+    { id: 'script', labelKey: 'panel.script', icon: FileText },
+    { id: 'veo', labelKey: 'panel.veo', icon: Video },
 ];
 
 export default function Header({ onTopUp }: HeaderProps) {
     const { isTrialMode, userEmail, balance, logout, exchangeRate, currentPanel, setCurrentPanel } = useApp();
+    const { language, setLanguage, t } = useLanguage();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAffiliateOpen, setIsAffiliateOpen] = useState(false);
+
+    const langOptions: { code: Language; label: string; flag: string }[] = [
+        { code: 'id', label: 'ID', flag: '🇮🇩' },
+        { code: 'en', label: 'EN', flag: '🇺🇸' },
+        { code: 'zh', label: '中文', flag: '🇨🇳' },
+        { code: 'ru', label: 'RU', flag: '🇷🇺' },
+    ];
 
     const handleLogout = () => {
         logout();
@@ -70,7 +79,7 @@ export default function Header({ onTopUp }: HeaderProps) {
                                         }`}
                                 >
                                     <Icon className="w-3.5 h-3.5" />
-                                    <span>{item.label}</span>
+                                    <span>{t(item.labelKey)}</span>
                                 </motion.button>
                             );
                         })}
@@ -79,17 +88,32 @@ export default function Header({ onTopUp }: HeaderProps) {
                     {/* Right: Balance & User & Hamburger */}
                     <div className="flex items-center gap-2 sm:gap-4 font-inter">
 
-                        {/* Affiliate Button (Desktop) */}
-                        <div className="hidden sm:block">
-                            <motion.button
-                                onClick={() => setIsAffiliateOpen(true)}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500 hover:text-black border border-yellow-500/20 px-3 py-1.5 rounded-xl flex items-center gap-2 transition-all"
-                            >
-                                <Gift className="w-4 h-4" />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Affiliate</span>
-                            </motion.button>
+                        {/* Affiliate Button (Always Visible) */}
+                        <motion.button
+                            onClick={() => setIsAffiliateOpen(true)}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500 hover:text-black border border-yellow-500/20 p-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl flex items-center gap-1 sm:gap-2 transition-all"
+                        >
+                            <Gift className="w-4 h-4" />
+                            <span className="hidden sm:inline text-[10px] font-black uppercase tracking-widest">Affiliate</span>
+                        </motion.button>
+
+                        {/* Language Switcher (Always Visible) */}
+                        <div className="flex items-center bg-white/5 rounded-lg p-0.5 border border-white/5">
+                            {langOptions.map((lang) => (
+                                <button
+                                    key={lang.code}
+                                    onClick={() => setLanguage(lang.code)}
+                                    className={`px-1.5 sm:px-2 py-1 text-[10px] sm:text-xs font-bold rounded-md transition-all ${language === lang.code
+                                        ? 'bg-red-500 text-white'
+                                        : 'text-slate-400 hover:text-white'
+                                        }`}
+                                    title={lang.label}
+                                >
+                                    {lang.flag}
+                                </button>
+                            ))}
                         </div>
 
                         {/* Balance */}
@@ -179,7 +203,7 @@ export default function Header({ onTopUp }: HeaderProps) {
                                                 }`}
                                         >
                                             <Icon className="w-5 h-5" />
-                                            <span className="font-bold text-sm uppercase tracking-widest">{item.label}</span>
+                                            <span className="font-bold text-sm uppercase tracking-widest">{t(item.labelKey)}</span>
                                         </button>
                                     );
                                 })}

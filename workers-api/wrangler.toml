@@ -1,0 +1,12 @@
+name = "affimate-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+CORS_ORIGIN = "https://affimate.axiamasi.com"
+
+# Environment variables (set in dashboard or via wrangler secret)
+# DUITKU_MERCHANT_CODE = ""
+# DUITKU_API_KEY = ""
+# SUPABASE_URL = ""
+# SUPABASE_SERVICE_KEY = ""

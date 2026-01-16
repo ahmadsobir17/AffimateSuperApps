@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { AppProvider, useApp } from '@/lib/context';
+import { LanguageProvider } from '@/lib/i18n';
 import LoginPage from '@/components/LoginPage';
 import MainApp from '@/components/MainApp';
 import Toast from '@/components/ui/Toast';
@@ -38,9 +39,11 @@ function Content() {
 
 export default function Home() {
   return (
-    <AppProvider>
-      <Toast />
-      <Content />
-    </AppProvider>
+    <LanguageProvider>
+      <AppProvider>
+        <Toast />
+        <Content />
+      </AppProvider>
+    </LanguageProvider>
   );
 }
