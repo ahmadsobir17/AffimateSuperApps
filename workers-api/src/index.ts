@@ -7,6 +7,7 @@ export interface Env {
     OPENROUTER_API_KEY: string;
     OPENROUTER_DEFAULT_MODEL: string;
     GEMINI_API_KEY: string;
+    KIE_API_KEY: string;
 }
 
 // Image generation model
@@ -118,8 +119,10 @@ async function handleLLM(request: Request, env: Env): Promise<Response> {
                         status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(request, env) }
                     });
                 }
-                // Try Native Gemini first for images, fallback to OpenRouter if key not found
-                if (env.GEMINI_API_KEY) {
+                // Priority: Kie.ai -> Gemini Native -> OpenRouter
+                if (env.KIE_API_KEY) {
+                    result = await generateImageKieAI(env.KIE_API_KEY, prompt);
+                } else if (env.GEMINI_API_KEY) {
                     result = await generateImageNativeGemini(env.GEMINI_API_KEY, prompt);
                 } else {
                     result = await generateImageOpenRouter(apiKey, prompt, inputImages);
@@ -136,7 +139,9 @@ async function handleLLM(request: Request, env: Env): Promise<Response> {
                 if (backImage) productImages.push(backImage);
                 if (customModelImage) productImages.push(customModelImage);
 
-                if (env.GEMINI_API_KEY) {
+                if (env.KIE_API_KEY) {
+                    result = await generateImageKieAI(env.KIE_API_KEY, prompt, productImages);
+                } else if (env.GEMINI_API_KEY) {
                     result = await generateImageNativeGemini(env.GEMINI_API_KEY, prompt, productImages);
                 } else {
                     result = await generateImageOpenRouter(apiKey, prompt, productImages);
@@ -194,6 +199,68 @@ async function callOpenRouter(
     return data.choices?.[0]?.message?.content || '';
 }
 
+// Generate image via Kie.ai (Aggregator for Image/Video)
+async function generateImageKieAI(
+    apiKey: string,
+    prompt: string,
+    inputImages?: string[]
+): Promise<string | null> {
+    try {
+        const response = await fetch('https://api.kie.ai/v1/image/generations', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'google/gemini-2.5-flash-image',
+                prompt: prompt,
+                image: inputImages && inputImages.length > 0 ? inputImages[0] : undefined,
+                n: 1,
+                size: '1024x1024'
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            console.error('Kie.ai Error:', err);
+            return null;
+        }
+
+        const data = await response.json() as any;
+        if (data.data?.[0]?.url) return data.data[0].url;
+        if (data.url) return data.url;
+
+        if (data.task_id) {
+            // Simple polling for async tasks
+            for (let i = 0; i < 15; i++) {
+                await new Promise(r => setTimeout(r, 2000));
+                const pollResp = await fetch(`https://api.kie.ai/v1/tasks/${data.task_id}`, {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
+                });
+                const pollData = await pollResp.json() as any;
+                if (pollData.status === 'succeeded') {
+                    return pollData.result?.url || pollData.url;
+                }
+                if (pollData.status === 'failed') break;
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error('Kie.ai Exception:', error);
+        return null;
+    }
+}
+
+// Generate image via Native Google Gemini API (Nano Banana)
+async function generateImageNativeGemini(
+    apiKey: string,
+    prompt: string,
+    inputImages?: string[]
+): Promise<string | null> {
+    return null;
+}
+
 // Generate image via OpenRouter using Gemini 2.5 Flash Image (Nano Banana)
 async function generateImageOpenRouter(
     apiKey: string,
@@ -202,7 +269,6 @@ async function generateImageOpenRouter(
 ): Promise<string | null> {
     const contentParts: any[] = [];
 
-    // Optional: Add reference images if provided
     if (inputImages && inputImages.length > 0) {
         for (const img of inputImages) {
             contentParts.push({
@@ -225,7 +291,6 @@ async function generateImageOpenRouter(
         body: JSON.stringify({
             model: IMAGE_GENERATION_MODEL,
             messages: [{ role: 'user', content: contentParts }],
-            // Try only 'image' to force pixel output
             modalities: ['image'],
         }),
     });
@@ -237,13 +302,9 @@ async function generateImageOpenRouter(
     }
 
     const data = await response.json() as any;
-    // Debug log to see what OpenRouter actually returns
-    console.log('OpenRouter Response Data:', JSON.stringify(data).slice(0, 500));
-
     const choice = data.choices?.[0];
     const content = choice?.message?.content;
 
-    // 1. Handle Array Response (Standard Nano Banana pixel output)
     if (Array.isArray(content)) {
         for (const part of content) {
             if (part.type === 'image_url' && part.image_url?.url) {
@@ -252,31 +313,17 @@ async function generateImageOpenRouter(
         }
     }
 
-    // 2. Handle Direct URL in choice (Some providers)
     if (choice?.image_url?.url) return choice.image_url.url;
     if (choice?.url) return choice.url;
 
-    // 3. Handle String Response (Description fallback)
     if (typeof content === 'string' && content.trim().length > 0) {
         return `[TEXT_DESCRIPTION]\n${content.trim()}`;
     }
 
-    // 3. Last resort check in data object
     if (data.choices?.[0]?.text) {
         return `[TEXT_DESCRIPTION]\n${data.choices[0].text.trim()}`;
     }
 
-    return null;
-}
-
-// Generate image via Native Google Gemini API (Nano Banana)
-async function generateImageNativeGemini(
-    apiKey: string,
-    prompt: string,
-    inputImages?: string[]
-): Promise<string | null> {
-    // Direct Gemini API call for image generation if supported by key
-    // For now, returning null to trigger OpenRouter fallback properly
     return null;
 }
 
