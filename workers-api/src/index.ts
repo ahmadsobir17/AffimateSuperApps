@@ -183,24 +183,29 @@ async function callOpenRouter(
     return data.choices?.[0]?.message?.content || '';
 }
 
-// Generate image via OpenRouter
+// Generate character description via OpenRouter (image gen not supported)
+// Returns a detailed text description that can be used with external image gen services
 async function generateImageOpenRouter(
     apiKey: string,
     prompt: string,
     inputImages?: string[]
 ): Promise<string | null> {
-    const contentParts: any[] = [];
+    // OpenRouter doesn't support image generation via chat API
+    // Instead, we generate a detailed visual description
 
-    if (inputImages && inputImages.length > 0) {
-        for (const img of inputImages) {
-            contentParts.push({
-                type: 'image_url',
-                image_url: { url: img.startsWith('data:') ? img : `data:image/png;base64,${img}` },
-            });
-        }
-    }
+    const enhancedPrompt = `You are a visual character designer. Based on this request, create a VERY detailed visual description that could be used as an image generation prompt.
 
-    contentParts.push({ type: 'text', text: prompt });
+User Request: ${prompt}
+
+Provide a detailed description including:
+- Physical appearance (face, body type, skin tone, etc.)
+- Clothing and accessories
+- Pose and expression
+- Background/setting
+- Lighting and mood
+- Art style (photorealistic, anime, etc.)
+
+Format your response as a single detailed paragraph optimized for AI image generation.`;
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -211,30 +216,23 @@ async function generateImageOpenRouter(
             'X-Title': 'Affimate Super Apps',
         },
         body: JSON.stringify({
-            model: IMAGE_GENERATION_MODEL,
-            messages: [{ role: 'user', content: contentParts }],
+            model: 'google/gemini-2.0-flash-exp:free',
+            messages: [{ role: 'user', content: enhancedPrompt }],
+            temperature: 0.8,
+            max_tokens: 1024,
         }),
     });
 
     if (!response.ok) {
         const errorData = await response.json() as any;
-        throw new Error(errorData.error?.message || `OpenRouter Image API Error: ${response.status}`);
+        throw new Error(errorData.error?.message || `OpenRouter API Error: ${response.status}`);
     }
 
     const data = await response.json() as any;
-    const content = data.choices?.[0]?.message?.content;
+    const description = data.choices?.[0]?.message?.content || null;
 
-    if (Array.isArray(content)) {
-        for (const part of content) {
-            if (part.type === 'image_url' && part.image_url?.url) {
-                const url = part.image_url.url;
-                if (url.startsWith('data:')) return url.split(',')[1];
-                return url;
-            }
-        }
-    }
-
-    return null;
+    // Return the description prefixed with a marker so frontend knows it's text, not image
+    return description ? `[TEXT_DESCRIPTION]\n${description}` : null;
 }
 
 // ============================================

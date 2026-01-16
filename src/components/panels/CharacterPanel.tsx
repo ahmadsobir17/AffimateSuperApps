@@ -39,6 +39,7 @@ export default function CharacterPanel() {
     // Result State
     const [isLoading, setIsLoading] = useState(false);
     const [resultImage, setResultImage] = useState<string | null>(null);
+    const [resultText, setResultText] = useState<string | null>(null);
 
     const handleGenerate = async () => {
         const cost = PRICING.CHARACTER;
@@ -62,10 +63,18 @@ export default function CharacterPanel() {
             const result = await generateCharacterOR(fullPrompt);
 
             if (result) {
-                setResultImage(`data:image/png;base64,${result}`);
-                showToast('Karakter Custom berhasil dibuat!', 'success');
+                if (result.startsWith('[TEXT_DESCRIPTION]')) {
+                    const cleanDescription = result.replace('[TEXT_DESCRIPTION]', '').trim();
+                    setResultText(cleanDescription);
+                    setResultImage(null);
+                    showToast('Proposal Karakter berhasil dibuat!', 'success');
+                } else {
+                    setResultImage(`data:image/png;base64,${result}`);
+                    setResultText(null);
+                    showToast('Karakter Custom berhasil dibuat!', 'success');
+                }
             } else {
-                throw new Error('Gagal generate gambar');
+                throw new Error('Gagal generate karakter');
             }
         } catch (error) {
             showToast('Gagal membuat karakter: ' + (error as Error).message, 'error');
@@ -221,6 +230,37 @@ export default function CharacterPanel() {
                                 alt="Generated Character"
                                 className="max-w-full max-h-full object-contain rounded-lg cursor-pointer hover:opacity-90 transition-opacity shadow-2xl"
                             />
+                        </motion.div>
+                    ) : resultText ? (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="w-full h-full p-6 overflow-y-auto"
+                        >
+                            <div className="bg-slate-900/60 border border-red-500/20 rounded-xl p-6 backdrop-blur-md">
+                                <h3 className="text-red-500 font-bold mb-4 flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4" /> Visual Character Description
+                                </h3>
+                                <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap font-mono">
+                                    {resultText}
+                                </p>
+                                <div className="mt-6 p-4 bg-red-500/10 rounded-lg border border-red-500/10">
+                                    <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest mb-1">Note:</p>
+                                    <p className="text-[11px] text-slate-400">
+                                        OpenRouter currently only supports text generation for character details. Copy this description to use with your favorite image generator (Midjourney, DALL-E, etc).
+                                    </p>
+                                </div>
+                                <Button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(resultText);
+                                        showToast('Deskripsi disalin ke clipboard!', 'success');
+                                    }}
+                                    className="mt-4 w-full"
+                                    variant="secondary"
+                                >
+                                    Copy Description
+                                </Button>
+                            </div>
                         </motion.div>
                     ) : (
                         <div className="flex-grow flex flex-col items-center justify-center text-slate-500 h-full">
