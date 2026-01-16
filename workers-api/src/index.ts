@@ -225,23 +225,21 @@ async function generateImageOpenRouter(
         body: JSON.stringify({
             model: IMAGE_GENERATION_MODEL,
             messages: [{ role: 'user', content: contentParts }],
-            // Nano Banana requires modalities to generate image
-            modalities: ['image'],
-            // Optional: response_format if needed, but modalities: ['image'] usually suffices to get content as array
+            // Nano Banana/Gemini Image models often need both modalities
+            modalities: ['image', 'text'],
         }),
     });
 
     if (!response.ok) {
         const errorText = await response.text();
         console.error('OpenRouter Image Error:', errorText);
-        throw new Error(`OpenRouter Image API Error (${response.status}): ${errorText.slice(0, 100)}`);
+        throw new Error(`OpenRouter Error (${response.status}): ${errorText.slice(0, 100)}`);
     }
 
     const data = await response.json() as any;
-
-    // Nano Banana returns image in the choices[0].message.content as an array
     const content = data.choices?.[0]?.message?.content;
 
+    // 1. Handle Array Response (Pixels/Image parts)
     if (Array.isArray(content)) {
         for (const part of content) {
             if (part.type === 'image_url' && part.image_url?.url) {
@@ -250,9 +248,14 @@ async function generateImageOpenRouter(
         }
     }
 
-    // Fallback if it returns text instead of image
-    if (typeof content === 'string' && content.length > 100) {
-        return `[TEXT_DESCRIPTION]\n${content}`;
+    // 2. Handle String Response (Description fallback)
+    if (typeof content === 'string' && content.trim().length > 0) {
+        return `[TEXT_DESCRIPTION]\n${content.trim()}`;
+    }
+
+    // 3. Last resort check in data object
+    if (data.choices?.[0]?.text) {
+        return `[TEXT_DESCRIPTION]\n${data.choices[0].text.trim()}`;
     }
 
     return null;
@@ -264,20 +267,8 @@ async function generateImageNativeGemini(
     prompt: string,
     inputImages?: string[]
 ): Promise<string | null> {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
-
-    // Note: Gemini 2.0 Flash Exp has built-in image generation in some regions/tiers.
-    // However, Nano Banana is usually 'gemini-1.5-flash-002' or specific image models.
-    // For now, let's use the 2.0 Flash Exp or the specific Image Gen URL if you have it.
-    // But since OpenRouter failed, let's try the direct Gemini 1.5 format which supports vision.
-
-    // Actually, for REAL image generation (outputting pixels), Google uses Imagen 3 via Vertex or specific endpoints.
-    // If you want NANO BANANA, we'll use the dedicated URL if available.
-
-    // Fallback: If we can't do direct pixel generation, we return a text description.
-    // BUT, usually people use OpenAI or Midjourney for this.
-
-    // Let's try to find a working IMAGE MODEL on OpenRouter one last time with different provider settings.
+    // Direct Gemini API call for image generation if supported by key
+    // For now, returning null to trigger OpenRouter fallback properly
     return null;
 }
 
