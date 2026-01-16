@@ -15,10 +15,10 @@ interface TopUpModalProps {
 }
 
 const TOP_UP_PACKAGES = [
-    { usd: 5, label: 'Starter Pack', icon: '🌱' },
-    { usd: 10, label: 'Popular Pack', icon: '🔥', popular: true },
-    { usd: 25, label: 'Pro Pack', icon: '🚀' },
-    { usd: 50, label: 'Agency Pack', icon: '👑' },
+    { idr: 50000, credits: 3, label: 'Starter Pack', icon: '🌱' },
+    { idr: 100000, credits: 7, label: 'Creator Pack', icon: '🔥', popular: true },
+    { idr: 250000, credits: 20, label: 'Pro Pack', icon: '🚀' },
+    { idr: 500000, credits: 50, label: 'Agency Pack', icon: '👑' },
 ];
 
 export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
@@ -29,12 +29,13 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
     const [isLoading, setIsLoading] = useState(false);
 
     // Final calculations
-    const finalUsdAmount = selectedPackage ? selectedPackage.usd : (parseFloat(customAmount) || 0);
-    const finalIdrAmount = Math.round(finalUsdAmount * exchangeRate);
+    // If custom amount is entered, we assume 1 Credit = Rp 15,000 (slightly more expensive than packages)
+    const activeIdrAmount = selectedPackage ? selectedPackage.idr : (parseInt(customAmount.replace(/\D/g, '')) || 0);
+    const activeCredits = selectedPackage ? selectedPackage.credits : Math.floor(activeIdrAmount / 15000);
 
     const handleDuitkuCheckout = async () => {
-        if (finalUsdAmount <= 0) {
-            showToast('Masukkan jumlah top up yang valid', 'error');
+        if (activeIdrAmount < 10000) {
+            showToast('Minimal top up Rp 10.000', 'error');
             return;
         }
 
@@ -42,9 +43,9 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
 
         try {
             const payload = {
-                paymentAmount: finalIdrAmount,
+                paymentAmount: activeIdrAmount,
                 paymentMethod,
-                productDetails: `Top Up ${finalUsdAmount} USD Affimate Credits`,
+                productDetails: `Top Up ${activeCredits} Credits`,
                 email: userEmail || 'guest@affimate.com',
                 customerVaName: userEmail?.split('@')[0] || 'Affimate User'
             };
@@ -58,7 +59,7 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
             const data = await response.json();
             console.log('Checkout Response:', data);
 
-            if (data.statusCode === '00' && data.paymentUrl) {
+            if (data?.paymentUrl) {
                 showToast('Mengarahkan ke halaman pembayaran...', 'success');
                 window.location.href = data.paymentUrl;
             } else {
@@ -119,14 +120,14 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                                     <div className="grid grid-cols-2 gap-3">
                                         {TOP_UP_PACKAGES.map((pkg) => (
                                             <motion.div
-                                                key={pkg.usd}
+                                                key={pkg.idr}
                                                 whileHover={{ scale: 1.02 }}
                                                 whileTap={{ scale: 0.98 }}
                                                 onClick={() => {
                                                     setSelectedPackage(pkg);
                                                     setCustomAmount('');
                                                 }}
-                                                className={`relative p-4 rounded-xl cursor-pointer transition-all border ${selectedPackage?.usd === pkg.usd && !customAmount
+                                                className={`relative p-4 rounded-xl cursor-pointer transition-all border ${selectedPackage?.idr === pkg.idr && !customAmount
                                                     ? 'bg-red-500/10 border-red-500 shadow-lg shadow-red-500/10'
                                                     : 'bg-slate-900/50 border-white/5 hover:border-white/20'
                                                     }`}
@@ -135,10 +136,10 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                                                     <span className="text-xl">{pkg.icon}</span>
                                                     <h3 className="font-bold text-white text-sm">{pkg.label}</h3>
                                                     <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">
-                                                        ${pkg.usd} Credits
+                                                        {pkg.credits} Credits
                                                     </p>
                                                     <div className="text-red-500 font-black mt-1">
-                                                        Rp {(pkg.usd * exchangeRate / 1000).toLocaleString('id-ID')}rb
+                                                        Rp {(pkg.idr / 1000).toLocaleString('id-ID')}rb
                                                     </div>
                                                 </div>
                                             </motion.div>
@@ -155,13 +156,15 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                                                 <DollarSign className="w-5 h-5" />
                                             </div>
                                             <input
-                                                type="number"
+                                                type="text"
                                                 value={customAmount}
                                                 onChange={(e) => {
-                                                    setCustomAmount(e.target.value);
+                                                    // Allow only numbers
+                                                    const val = e.target.value.replace(/\D/g, '');
+                                                    setCustomAmount(Number(val).toLocaleString('id-ID'));
                                                     setSelectedPackage(null);
                                                 }}
-                                                placeholder="Contoh: 15"
+                                                placeholder="Contoh: 50.000"
                                                 className="w-full bg-slate-900/50 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white font-bold focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/30 transition-all placeholder:text-slate-700"
                                             />
                                         </div>
@@ -212,18 +215,14 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                                     <div className="bg-slate-900/80 rounded-2xl p-6 border border-white/5 space-y-4">
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-center text-xs">
-                                                <span className="text-slate-500">Kredit (USD)</span>
-                                                <span className="text-white font-bold">${finalUsdAmount.toFixed(2)}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center text-xs">
-                                                <span className="text-slate-500">Kurs Real-time</span>
-                                                <span className="text-slate-400">Rp {Math.round(exchangeRate).toLocaleString('id-ID')}</span>
+                                                <span className="text-slate-500">Estimasi Kredit</span>
+                                                <span className="text-white font-bold">{activeCredits} Credits</span>
                                             </div>
                                             <div className="h-px bg-white/5 my-2" />
                                             <div className="flex justify-between items-center">
-                                                <span className="text-sm text-slate-400 font-bold">Total (IDR)</span>
+                                                <span className="text-sm text-slate-400 font-bold">Total Pembayaran</span>
                                                 <span className="text-red-500 font-black text-2xl">
-                                                    Rp {finalIdrAmount.toLocaleString('id-ID')}
+                                                    Rp {activeIdrAmount.toLocaleString('id-ID')}
                                                 </span>
                                             </div>
                                         </div>
@@ -234,7 +233,7 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                                             className="w-full py-5 text-lg shadow-2xl"
                                             variant="primary"
                                             icon={<ArrowRight className="w-5 h-5" />}
-                                            disabled={finalUsdAmount <= 0}
+                                            disabled={activeIdrAmount < 10000}
                                         >
                                             Bayar Sekarang
                                         </Button>

@@ -340,21 +340,16 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             </section>
 
             {/* --- FOOTER --- */}
-            <footer className="py-20 border-t border-white/5 px-4">
-                <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-                    <div className="text-slate-500 text-sm font-bold">
-                        &copy; 2026 Affimate Super Apps. Semua hak dilindungi.
+            <footer className="py-8 border-t border-white/5 px-4 bg-[#050911]">
+                <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-bold tracking-widest uppercase text-slate-600">
+                    <div className="flex items-center gap-3">
+                        <span>&copy; 2026 Affimate</span>
+                        <span className="w-1 h-1 bg-slate-800 rounded-full" />
+                        <span>Powered by Axiamasi Strategy</span>
                     </div>
-                    <div className="flex gap-8 text-slate-500 text-sm font-black uppercase tracking-widest">
+                    <div className="flex gap-6">
                         <a href="#" className="hover:text-red-500 transition-colors">Privacy</a>
                         <a href="#" className="hover:text-red-500 transition-colors">Terms</a>
-                        <a href="https://wa.me/628815117035" target="_blank" className="hover:text-red-500 flex items-center gap-2 transition-colors">
-                            <MessageCircle className="w-4 h-4" />
-                            Admin Consulting
-                        </a>
-                    </div>
-                    <div className="text-slate-600 text-[10px] font-black uppercase tracking-[0.4em]">
-                        Part of Axiamasi Ecosystem
                     </div>
                 </div>
             </footer>
