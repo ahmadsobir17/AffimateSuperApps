@@ -1,5 +1,6 @@
 // API Configuration
 // Change this URL after deploying Workers to Cloudflare
+// Updated for OpenRouter Migration
 
 // For development, you can run workers locally with: cd workers-api && npm run dev
 // For production, this should be your deployed Workers URL
