@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, AlignLeft, Hash, UploadCloud, X, Sparkles, Crown, Lock, Scissors, Timer, Copy, Mic } from 'lucide-react';
 import { useApp } from '@/lib/context';
-import { generateScript, analyzeProduct, generateTTS, fileToBase64 } from '@/lib/api';
+import { generateScriptOR, analyzeProductOR, fileToBase64 } from '@/lib/apiOpenRouter';
 import {
     PLATFORM_OPTIONS,
     DURATION_OPTIONS,
@@ -24,7 +24,7 @@ import LoaderOverlay from '@/components/ui/Loader';
 type ScriptMode = 'script' | 'caption' | 'hashtag';
 
 export default function ScriptPanel() {
-    const { isTrialMode, showToast, apiKey, deductBalance } = useApp();
+    const { isTrialMode, showToast, deductBalance } = useApp();
 
     // Image State
     const [images, setImages] = useState<string[]>([]);
@@ -73,7 +73,7 @@ export default function ScriptPanel() {
         if (!deductBalance(0.005)) return;
         setIsAnalyzing(true);
         try {
-            const result = await analyzeProduct(images, apiKey);
+            const result = await analyzeProductOR(images);
             if (result) {
                 setProductDesc(result.trim());
                 showToast('Analisa selesai!', 'success');
@@ -159,7 +159,7 @@ SCENE 2... (and so on)`;
         }
 
         try {
-            const text = await generateScript(prompt, images, apiKey);
+            const text = await generateScriptOR(prompt, images);
             if (text) {
                 const cleanText = text.replace(/\*\*/g, '').replace(/__/g, '').replace(/##/g, '').trim();
                 setResult(cleanText);
@@ -211,12 +211,11 @@ SCENE 2... (and so on)`;
                 throw new Error('Gagal mendeteksi dialog di script.');
             }
 
-            const blob = await generateTTS(textToSpeak, ttsVoice, ttsTemp, apiKey);
-            if (blob) {
-                const url = URL.createObjectURL(blob);
-                setAudioUrl(url);
-                showToast('Audio berhasil dibuat!', 'success');
-            }
+            // TTS not available on OpenRouter yet - show message
+            showToast('TTS sedang dalam pengembangan untuk OpenRouter.', 'error');
+            // For now, skip TTS
+            // const blob = await generateTTS(textToSpeak, ttsVoice, ttsTemp);
+            throw new Error('TTS belum tersedia via OpenRouter. Gunakan service TTS external seperti ElevenLabs.');
         } catch (error) {
             showToast('TTS Error: ' + (error as Error).message, 'error');
         } finally {

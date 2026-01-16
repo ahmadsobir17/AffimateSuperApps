@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Video, UploadCloud, X, Clapperboard, Crown, Lock, Copy } from 'lucide-react';
 import { useApp } from '@/lib/context';
-import { generateVeoPrompt, fileToBase64 } from '@/lib/api';
+import { generateVeoPromptOR, fileToBase64 } from '@/lib/apiOpenRouter';
 import { VEO_STYLES, VEO_SHOTS, VEO_CAMERA_MOVEMENTS, PRICING } from '@/lib/constants';
 import GlassPanel from '@/components/ui/GlassPanel';
 import Select from '@/components/ui/Select';
@@ -13,7 +13,7 @@ import Button from '@/components/ui/Button';
 import LoaderOverlay from '@/components/ui/Loader';
 
 export default function VeoPanel() {
-    const { isTrialMode, showToast, apiKey, deductBalance } = useApp();
+    const { isTrialMode, showToast, deductBalance } = useApp();
 
     // Image State
     const [image, setImage] = useState<string | null>(null);
@@ -67,7 +67,7 @@ ${currentDialogue ? `- Character Dialogue: "${currentDialogue}"` : ''}
 [OUTPUT]: Combine into a single, cohesive, descriptive paragraph. Describe lighting, texture, and atmosphere. Output ONLY the prompt text.`;
 
         try {
-            const text = await generateVeoPrompt(prompt, image, apiKey);
+            const text = await generateVeoPromptOR(prompt, image);
             if (text) {
                 setResult(text);
                 showToast('Berhasil dibuat!', 'success');

@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Shirt, RefreshCcw, X, Wand2, Sparkles, Crown, Lock, Download, Edit3, Clapperboard, RefreshCw } from 'lucide-react';
 import { useApp } from '@/lib/context';
-import { generateProductImage, analyzeProduct, fileToBase64 } from '@/lib/api';
+import { generateProductImageOR, analyzeProductOR, fileToBase64 } from '@/lib/apiOpenRouter';
 import { MODEL_OPTIONS, STUDIO_THEMES, LIGHTING_OPTIONS, ANGLE_OPTIONS, PRICING } from '@/lib/constants';
 import GlassPanel from '@/components/ui/GlassPanel';
 import Select from '@/components/ui/Select';
@@ -14,7 +14,7 @@ import Toggle from '@/components/ui/Toggle';
 import LoaderOverlay, { ImageSlotLoader } from '@/components/ui/Loader';
 
 export default function ImagePanel() {
-    const { isTrialMode, showToast, apiKey, deductBalance } = useApp();
+    const { isTrialMode, showToast, deductBalance } = useApp();
 
     // Image State
     const [frontImage, setFrontImage] = useState<string | null>(null);
@@ -71,7 +71,7 @@ export default function ImagePanel() {
             const images = [frontImage];
             if (backImage) images.push(backImage);
 
-            const result = await analyzeProduct(images, apiKey);
+            const result = await analyzeProductOR(images);
             if (result) {
                 setDescription(result.trim());
                 showToast('Analisa produk selesai!', 'success');
@@ -116,7 +116,7 @@ Camera Angle: ${angle}.
 [DETAILS]: ${extraDetails}
 [QUALITY]: 8k, photorealistic, sharp focus, commercial advertisement quality.`;
 
-                const result = await generateProductImage(prompt, frontImage, apiKey, backImage, customModelImage);
+                const result = await generateProductImageOR(prompt, frontImage, backImage, customModelImage);
                 if (result) {
                     newResults.push(`data:image/png;base64,${result}`);
                 }

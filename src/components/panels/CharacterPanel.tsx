@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User, UserCheck, Sparkles, Crown, Lock } from 'lucide-react';
 import { useApp } from '@/lib/context';
 import { useLanguage } from '@/lib/i18n';
-import { generateCharacter } from '@/lib/api';
+import { generateCharacterOR } from '@/lib/apiOpenRouter';
 import {
     CHARACTER_STYLES,
     AGE_OPTIONS,
@@ -23,7 +23,7 @@ import Button from '@/components/ui/Button';
 import LoaderOverlay from '@/components/ui/Loader';
 
 export default function CharacterPanel() {
-    const { isTrialMode, activeGender, setActiveGender, showToast, apiKey, deductBalance } = useApp();
+    const { isTrialMode, activeGender, setActiveGender, showToast, deductBalance } = useApp();
     const { t } = useLanguage();
 
     // Form State
@@ -59,7 +59,7 @@ export default function CharacterPanel() {
 [ACTION/CONTEXT]: ${activity}.
 [QUALITY]: Highly detailed, sharp focus, professional photography, 8k, cinematic lighting, photorealistic skin texture.`;
 
-            const result = await generateCharacter(fullPrompt, apiKey);
+            const result = await generateCharacterOR(fullPrompt);
 
             if (result) {
                 setResultImage(`data:image/png;base64,${result}`);

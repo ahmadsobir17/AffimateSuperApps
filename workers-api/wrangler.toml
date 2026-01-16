@@ -4,9 +4,19 @@ compatibility_date = "2024-01-01"
 
 [vars]
 CORS_ORIGIN = "https://affimate.axiamasi.com"
+OPENROUTER_DEFAULT_MODEL = "google/gemini-2.0-flash-exp:free"
 
-# Environment variables (set in dashboard or via wrangler secret)
-# DUITKU_MERCHANT_CODE = ""
-# DUITKU_API_KEY = ""
-# SUPABASE_URL = ""
-# SUPABASE_SERVICE_KEY = ""
+# ============================================
+# SECRETS (set via CLI: npx wrangler secret put SECRET_NAME)
+# ============================================
+# 
+# Required for OpenRouter LLM:
+# npx wrangler secret put OPENROUTER_API_KEY
+#
+# Required for Duitku Payment:
+# npx wrangler secret put DUITKU_MERCHANT_CODE
+# npx wrangler secret put DUITKU_API_KEY
+#
+# Optional for Supabase:
+# npx wrangler secret put SUPABASE_URL
+# npx wrangler secret put SUPABASE_SERVICE_KEY
