@@ -69,7 +69,7 @@ export default function CharacterPanel() {
                     setResultImage(null);
                     showToast('Proposal Karakter berhasil dibuat!', 'success');
                 } else {
-                    setResultImage(`data:image/png;base64,${result}`);
+                    setResultImage(result);
                     setResultText(null);
                     showToast('Karakter Custom berhasil dibuat!', 'success');
                 }

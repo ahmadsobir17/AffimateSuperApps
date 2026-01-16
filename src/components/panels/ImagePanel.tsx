@@ -118,7 +118,7 @@ Camera Angle: ${angle}.
 
                 const result = await generateProductImageOR(prompt, frontImage, backImage, customModelImage);
                 if (result) {
-                    newResults.push(`data:image/png;base64,${result}`);
+                    newResults.push(result);
                 }
             }
 
