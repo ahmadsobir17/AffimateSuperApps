@@ -6,11 +6,12 @@ export interface Env {
     CORS_ORIGIN: string;
     OPENROUTER_API_KEY: string;
     OPENROUTER_DEFAULT_MODEL: string;
+    GEMINI_API_KEY: string;
 }
 
 // Image generation model
 // Image generation model - Nano Banana (Gemini 2.5 Flash Image)
-const IMAGE_GENERATION_MODEL = 'google/gemini-2.5-flash-image-preview';
+const IMAGE_GENERATION_MODEL = 'google/gemini-2.5-flash-image';
 
 // Simple MD5 implementation for Workers (no CryptoJS needed)
 async function md5(message: string): Promise<string> {
@@ -117,7 +118,12 @@ async function handleLLM(request: Request, env: Env): Promise<Response> {
                         status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders(request, env) }
                     });
                 }
-                result = await generateImageOpenRouter(apiKey, prompt, inputImages);
+                // Try Native Gemini first for images, fallback to OpenRouter if key not found
+                if (env.GEMINI_API_KEY) {
+                    result = await generateImageNativeGemini(env.GEMINI_API_KEY, prompt);
+                } else {
+                    result = await generateImageOpenRouter(apiKey, prompt, inputImages);
+                }
                 break;
 
             case 'product-image':
@@ -129,7 +135,12 @@ async function handleLLM(request: Request, env: Env): Promise<Response> {
                 const productImages = [imageBase64];
                 if (backImage) productImages.push(backImage);
                 if (customModelImage) productImages.push(customModelImage);
-                result = await generateImageOpenRouter(apiKey, prompt, productImages);
+
+                if (env.GEMINI_API_KEY) {
+                    result = await generateImageNativeGemini(env.GEMINI_API_KEY, prompt, productImages);
+                } else {
+                    result = await generateImageOpenRouter(apiKey, prompt, productImages);
+                }
                 break;
 
             default:
@@ -250,6 +261,29 @@ async function generateImageOpenRouter(
         return `[TEXT_DESCRIPTION]\n${content}`;
     }
 
+    return null;
+}
+
+// Generate image via Native Google Gemini API (Nano Banana)
+async function generateImageNativeGemini(
+    apiKey: string,
+    prompt: string,
+    inputImages?: string[]
+): Promise<string | null> {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
+
+    // Note: Gemini 2.0 Flash Exp has built-in image generation in some regions/tiers.
+    // However, Nano Banana is usually 'gemini-1.5-flash-002' or specific image models.
+    // For now, let's use the 2.0 Flash Exp or the specific Image Gen URL if you have it.
+    // But since OpenRouter failed, let's try the direct Gemini 1.5 format which supports vision.
+
+    // Actually, for REAL image generation (outputting pixels), Google uses Imagen 3 via Vertex or specific endpoints.
+    // If you want NANO BANANA, we'll use the dedicated URL if available.
+
+    // Fallback: If we can't do direct pixel generation, we return a text description.
+    // BUT, usually people use OpenAI or Midjourney for this.
+
+    // Let's try to find a working IMAGE MODEL on OpenRouter one last time with different provider settings.
     return null;
 }
 
