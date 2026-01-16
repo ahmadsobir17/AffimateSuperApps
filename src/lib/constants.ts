@@ -33,6 +33,7 @@ export const AGE_OPTIONS: SelectOption[] = [
 // Ethnicity Options
 export const ETHNICITY_OPTIONS: SelectOption[] = [
     { value: 'Indonesian asian', label: '🇮🇩 Indonesia' },
+    { value: 'Southeast Asian', label: '🌏 Asia Tenggara (Malay/Thai/Viet)' },
     { value: 'East Asian', label: '🇨🇳/🇯🇵 Asia Timur' },
     { value: 'Caucasian', label: '🇺🇸/🇪🇺 Bule (Caucasian)' },
     { value: 'Middle Eastern', label: '🇸🇦 Timur Tengah' },

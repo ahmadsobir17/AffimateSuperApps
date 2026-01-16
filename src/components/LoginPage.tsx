@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '@/lib/context';
 import GlassPanel from '@/components/ui/GlassPanel';
+import { useState, useEffect } from 'react';
 
 interface LoginPageProps {
     onLogin: () => void;
@@ -16,6 +17,15 @@ interface LoginPageProps {
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
     const { loginWithGoogle } = useApp();
+    const [contentCount, setContentCount] = useState(3492);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            // Increment by random amount (1-3) every 2 seconds
+            setContentCount(prev => prev + Math.floor(Math.random() * 3) + 1);
+        }, 2000);
+        return () => clearInterval(interval);
+    }, []);
 
     const fadeIn = {
         initial: { opacity: 0, y: 20 },
@@ -186,7 +196,13 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
                             {/* Floating Stats */}
                             <div className="absolute bottom-6 left-6 bg-red-600 p-6 rounded-3xl border border-white/20 shadow-2xl">
-                                <div className="text-3xl font-black text-white">3,492</div>
+                                <div className="text-3xl font-black text-white flex items-center gap-2">
+                                    {contentCount.toLocaleString()}
+                                    <span className="flex h-2 w-2 relative">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                                    </span>
+                                </div>
                                 <div className="text-[10px] text-white/70 font-black uppercase tracking-widest mt-1">Content Generated</div>
                             </div>
 
@@ -261,12 +277,21 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                                 Dalam dunia affiliate, siapa yang paling cepat merespon tren adalah pemenang. Affimate memberi lo **Agility** mutlak. Dari ide ke postingan cuma butuh hitungan detik.
                             </p>
                             <div className="flex items-center gap-6 pt-4">
-                                <div className="flex -space-x-3">
-                                    {[1, 2, 3, 4, 5].map(i => (
-                                        <div key={i} className="w-12 h-12 rounded-full border-2 border-red-600 bg-slate-800" />
+                                <div className="flex -space-x-4 pl-2">
+                                    {[1, 2, 3, 4].map(i => (
+                                        <div key={i} className="w-12 h-12 rounded-full border-2 border-red-600 bg-slate-800 overflow-hidden relative shadow-lg">
+                                            <img
+                                                src={`/avatars/av${i}.png`}
+                                                alt="Creator Avatar"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
                                     ))}
+                                    <div className="w-12 h-12 rounded-full border-2 border-red-600 bg-slate-900 flex items-center justify-center text-[10px] font-bold text-white shadow-lg">
+                                        5k+
+                                    </div>
                                 </div>
-                                <p className="text-xs font-black uppercase tracking-[0.2em]">Bergabung dengan 5k+ Creator Masa Depan</p>
+                                <p className="text-xs font-black uppercase tracking-[0.2em] text-white/80">Bergabung dengan 5k+ Creator Masa Depan</p>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-6 font-pjs">
