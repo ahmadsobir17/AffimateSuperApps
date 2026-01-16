@@ -9,8 +9,8 @@ export interface Env {
 }
 
 // Image generation model
-// Image generation model - Flux is reliable and available on OpenRouter
-const IMAGE_GENERATION_MODEL = 'black-forest-labs/flux-1-schnell';
+// Image generation model - Using reliable SDXL
+const IMAGE_GENERATION_MODEL = 'stabilityai/stable-diffusion-xl-base-1.0';
 
 // Simple MD5 implementation for Workers (no CryptoJS needed)
 async function md5(message: string): Promise<string> {
