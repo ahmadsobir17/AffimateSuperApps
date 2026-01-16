@@ -63,7 +63,7 @@ async function handleLLM(request: Request, env: Env): Promise<Response> {
         const { action, messages, prompt, systemPrompt, imageBase64, inputImages, model, temperature, maxTokens, backImage, customModelImage } = body;
 
         const apiKey = env.OPENROUTER_API_KEY;
-        const defaultModel = env.OPENROUTER_DEFAULT_MODEL || 'google/gemini-2.0-flash-exp:free';
+        const defaultModel = env.OPENROUTER_DEFAULT_MODEL || 'google/gemini-2.0-flash-001';
 
         if (!apiKey) {
             return new Response(JSON.stringify({ success: false, error: 'OpenRouter API key not configured' }), {
@@ -110,7 +110,8 @@ async function handleLLM(request: Request, env: Env): Promise<Response> {
                         { type: 'text', text: prompt }
                     ]
                 }];
-                result = await callOpenRouter(apiKey, selectedModel, visionMessages, temperature, maxTokens);
+                // Force a very stable vision model for analysis
+                result = await callOpenRouter(apiKey, 'google/gemini-flash-1.5', visionMessages, temperature, maxTokens);
                 break;
 
             case 'image':
