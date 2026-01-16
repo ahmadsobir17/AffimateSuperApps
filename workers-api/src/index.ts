@@ -9,8 +9,8 @@ export interface Env {
 }
 
 // Image generation model
-// Image generation model - Using reliable SDXL
-const IMAGE_GENERATION_MODEL = 'stabilityai/stable-diffusion-xl-base-1.0';
+// Image generation model - Nano Banana (Gemini 2.5 Flash Image)
+const IMAGE_GENERATION_MODEL = 'google/gemini-2.5-flash-image-preview';
 
 // Simple MD5 implementation for Workers (no CryptoJS needed)
 async function md5(message: string): Promise<string> {
@@ -183,29 +183,25 @@ async function callOpenRouter(
     return data.choices?.[0]?.message?.content || '';
 }
 
-// Generate character description via OpenRouter (image gen not supported)
-// Returns a detailed text description that can be used with external image gen services
+// Generate image via OpenRouter using Gemini 2.5 Flash Image (Nano Banana)
 async function generateImageOpenRouter(
     apiKey: string,
     prompt: string,
     inputImages?: string[]
 ): Promise<string | null> {
-    // OpenRouter doesn't support image generation via chat API
-    // Instead, we generate a detailed visual description
+    const contentParts: any[] = [];
 
-    const enhancedPrompt = `You are a visual character designer. Based on this request, create a VERY detailed visual description that could be used as an image generation prompt.
+    // Optional: Add reference images if provided
+    if (inputImages && inputImages.length > 0) {
+        for (const img of inputImages) {
+            contentParts.push({
+                type: 'image_url',
+                image_url: { url: img.startsWith('data:') ? img : `data:image/png;base64,${img}` },
+            });
+        }
+    }
 
-User Request: ${prompt}
-
-Provide a detailed description including:
-- Physical appearance (face, body type, skin tone, etc.)
-- Clothing and accessories
-- Pose and expression
-- Background/setting
-- Lighting and mood
-- Art style (photorealistic, anime, etc.)
-
-Format your response as a single detailed paragraph optimized for AI image generation.`;
+    contentParts.push({ type: 'text', text: prompt });
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -216,23 +212,45 @@ Format your response as a single detailed paragraph optimized for AI image gener
             'X-Title': 'Affimate Super Apps',
         },
         body: JSON.stringify({
-            model: 'google/gemini-2.0-flash-exp:free',
-            messages: [{ role: 'user', content: enhancedPrompt }],
-            temperature: 0.8,
-            max_tokens: 1024,
+            model: IMAGE_GENERATION_MODEL,
+            messages: [{ role: 'user', content: contentParts }],
+            // Nano Banana requires modalities to generate image
+            modalities: ['image'],
+            // Optional: response_format if needed, but modalities: ['image'] usually suffices to get content as array
         }),
     });
 
     if (!response.ok) {
-        const errorData = await response.json() as any;
-        throw new Error(errorData.error?.message || `OpenRouter API Error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('OpenRouter Image Error:', errorText);
+        throw new Error(`OpenRouter Image API Error (${response.status}): ${errorText.slice(0, 100)}`);
     }
 
     const data = await response.json() as any;
-    const description = data.choices?.[0]?.message?.content || null;
 
-    // Return the description prefixed with a marker so frontend knows it's text, not image
-    return description ? `[TEXT_DESCRIPTION]\n${description}` : null;
+    // Nano Banana returns image in the choices[0].message.content as an array
+    const content = data.choices?.[0]?.message?.content;
+
+    if (Array.isArray(content)) {
+        for (const part of content) {
+            if (part.type === 'image_url' && part.image_url?.url) {
+                const url = part.image_url.url;
+                // If it's base64 data:image/...
+                if (url.startsWith('data:')) {
+                    return url.split(',')[1];
+                }
+                // If it's a URL
+                return url;
+            }
+        }
+    }
+
+    // Fallback if it returns text instead of image
+    if (typeof content === 'string' && content.length > 100) {
+        return `[TEXT_DESCRIPTION]\n${content}`;
+    }
+
+    return null;
 }
 
 // ============================================
