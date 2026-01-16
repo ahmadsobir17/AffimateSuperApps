@@ -6,7 +6,7 @@ import { MapPin, X, Check } from 'lucide-react';
 import { useApp } from '@/lib/context';
 import { FOMO_NAMES, FOMO_LOCATIONS, FOMO_PRODUCTS } from '@/lib/constants';
 
-export default function FomoPopup() {
+export default function FomoPopup({ demo = false }: { demo?: boolean }) {
     const { isTrialMode } = useApp();
     const [isVisible, setIsVisible] = useState(false);
     const [data, setData] = useState({
@@ -18,7 +18,7 @@ export default function FomoPopup() {
     });
 
     useEffect(() => {
-        if (!isTrialMode) return;
+        if (!isTrialMode && !demo) return;
 
         const showFomo = () => {
             const name = FOMO_NAMES[Math.floor(Math.random() * FOMO_NAMES.length)];
@@ -54,18 +54,18 @@ export default function FomoPopup() {
             clearTimeout(initialTimer);
             clearInterval(interval);
         };
-    }, [isTrialMode]);
+    }, [isTrialMode, demo]);
 
-    if (!isTrialMode) return null;
+    if (!isTrialMode && !demo) return null;
 
     return (
         <AnimatePresence>
             {isVisible && (
                 <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 20, opacity: 0 }}
-                    className="fixed bottom-20 right-5 z-50 flex items-center gap-3 bg-slate-800/90 backdrop-blur-md border border-slate-600/50 p-3 rounded-xl shadow-2xl max-w-[300px]"
+                    initial={{ y: 20, opacity: 0, x: '-50%' }}
+                    animate={{ y: 0, opacity: 1, x: '-50%' }}
+                    exit={{ y: 20, opacity: 0, x: '-50%' }}
+                    className="fixed bottom-6 left-1/2 md:transform-none md:left-auto md:bottom-20 md:right-5 z-50 flex items-center gap-3 bg-slate-800/90 backdrop-blur-md border border-slate-600/50 p-3 rounded-xl shadow-2xl max-w-[300px] w-full md:w-auto"
                 >
                     <div className="relative">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold text-xs shadow-lg">

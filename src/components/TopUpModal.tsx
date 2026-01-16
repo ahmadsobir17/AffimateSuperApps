@@ -15,10 +15,10 @@ interface TopUpModalProps {
 }
 
 const TOP_UP_PACKAGES = [
-    { idr: 50000, credits: 3, label: 'Starter Pack', icon: '🌱' },
-    { idr: 100000, credits: 7, label: 'Creator Pack', icon: '🔥', popular: true },
-    { idr: 250000, credits: 20, label: 'Pro Pack', icon: '🚀' },
-    { idr: 500000, credits: 50, label: 'Agency Pack', icon: '👑' },
+    { idr: 50000, usd: 3, label: 'Starter Pack', icon: '🌱' },
+    { idr: 100000, usd: 7, label: 'Creator Pack', icon: '🔥', popular: true },
+    { idr: 250000, usd: 20, label: 'Pro Pack', icon: '🚀' },
+    { idr: 500000, usd: 50, label: 'Agency Pack', icon: '👑' },
 ];
 
 export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
@@ -29,9 +29,9 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
     const [isLoading, setIsLoading] = useState(false);
 
     // Final calculations
-    // If custom amount is entered, we assume 1 Credit = Rp 15,000 (slightly more expensive than packages)
+    // If custom amount is entered, we assume $1 = Rp 15,000 (slightly more expensive than packages)
     const activeIdrAmount = selectedPackage ? selectedPackage.idr : (parseInt(customAmount.replace(/\D/g, '')) || 0);
-    const activeCredits = selectedPackage ? selectedPackage.credits : Math.floor(activeIdrAmount / 15000);
+    const activeUsdAmount = selectedPackage ? selectedPackage.usd : parseFloat((activeIdrAmount / 15000).toFixed(2));
 
     const handleDuitkuCheckout = async () => {
         if (activeIdrAmount < 10000) {
@@ -45,7 +45,7 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
             const payload = {
                 paymentAmount: activeIdrAmount,
                 paymentMethod,
-                productDetails: `Top Up ${activeCredits} Credits`,
+                productDetails: `Top Up $${activeUsdAmount} Affimate Balance`,
                 email: userEmail || 'guest@affimate.com',
                 customerVaName: userEmail?.split('@')[0] || 'Affimate User'
             };
@@ -101,8 +101,10 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                             <div className="flex justify-between items-start mb-8">
                                 <div>
                                     <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                                        <Wallet className="w-8 h-8 text-red-500" />
-                                        Isi Ulang Kredit
+                                        <div className="bg-emerald-500/20 p-2 rounded-xl">
+                                            <DollarSign className="w-8 h-8 text-emerald-500" />
+                                        </div>
+                                        Isi Ulang Saldo
                                     </h2>
                                     <p className="text-slate-400 mt-2">Pilih paket atau masukkan jumlah custom yang kamu mau.</p>
                                 </div>
@@ -135,10 +137,10 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                                                 <div className="flex flex-col gap-1">
                                                     <span className="text-xl">{pkg.icon}</span>
                                                     <h3 className="font-bold text-white text-sm">{pkg.label}</h3>
-                                                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">
-                                                        {pkg.credits} Credits
+                                                    <p className="text-[14px] text-emerald-400 font-black tracking-wide">
+                                                        ${pkg.usd}
                                                     </p>
-                                                    <div className="text-red-500 font-black mt-1">
+                                                    <div className="text-slate-500 text-xs font-bold mt-1">
                                                         Rp {(pkg.idr / 1000).toLocaleString('id-ID')}rb
                                                     </div>
                                                 </div>
@@ -152,8 +154,8 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                                             <span>Atau Masukkan Custom Amount</span>
                                         </div>
                                         <div className="relative group">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-red-500 transition-colors">
-                                                <DollarSign className="w-5 h-5" />
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-red-500 transition-colors font-bold text-sm">
+                                                Rp
                                             </div>
                                             <input
                                                 type="text"
@@ -215,8 +217,8 @@ export default function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                                     <div className="bg-slate-900/80 rounded-2xl p-6 border border-white/5 space-y-4">
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-center text-xs">
-                                                <span className="text-slate-500">Estimasi Kredit</span>
-                                                <span className="text-white font-bold">{activeCredits} Credits</span>
+                                                <span className="text-slate-500">Estimasi Saldo</span>
+                                                <span className="text-emerald-400 font-bold text-lg">${activeUsdAmount}</span>
                                             </div>
                                             <div className="h-px bg-white/5 my-2" />
                                             <div className="flex justify-between items-center">

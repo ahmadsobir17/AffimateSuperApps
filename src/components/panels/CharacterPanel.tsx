@@ -13,6 +13,7 @@ import {
     HAIR_COLORS,
     BODY_TYPES,
     OUTFIT_OPTIONS,
+    PRICING,
 } from '@/lib/constants';
 import GlassPanel from '@/components/ui/GlassPanel';
 import Select from '@/components/ui/Select';
@@ -38,7 +39,7 @@ export default function CharacterPanel() {
     const [resultImage, setResultImage] = useState<string | null>(null);
 
     const handleGenerate = async () => {
-        const cost = 0.01; // $0.01 per character
+        const cost = PRICING.CHARACTER;
 
         if (!deductBalance(cost)) {
             return;
@@ -191,7 +192,7 @@ export default function CharacterPanel() {
                                 <span>{isLoading ? 'Generating...' : 'Generate Character'}</span>
                                 {!isLoading && (
                                     <span className="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">
-                                        Estimasi Biaya: $0.01
+                                        Costs ${PRICING.CHARACTER}
                                     </span>
                                 )}
                             </div>

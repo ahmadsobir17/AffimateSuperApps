@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Shirt, RefreshCcw, X, Wand2, Sparkles, Crown, Lock, Download, Edit3, Clapperboard, RefreshCw } from 'lucide-react';
 import { useApp } from '@/lib/context';
 import { generateProductImage, analyzeProduct, fileToBase64 } from '@/lib/api';
-import { MODEL_OPTIONS, STUDIO_THEMES, LIGHTING_OPTIONS, ANGLE_OPTIONS } from '@/lib/constants';
+import { MODEL_OPTIONS, STUDIO_THEMES, LIGHTING_OPTIONS, ANGLE_OPTIONS, PRICING } from '@/lib/constants';
 import GlassPanel from '@/components/ui/GlassPanel';
 import Select from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Input';
@@ -95,7 +95,7 @@ export default function ImagePanel() {
         }
 
         const count = massMode ? genCount : 1;
-        const cost = count * 0.01; // $0.01 per image
+        const cost = count * PRICING.PRODUCT_IMAGE;
 
         if (!deductBalance(cost)) {
             return;
@@ -367,7 +367,7 @@ Camera Angle: ${angle}.
                                 <span>{isLoading ? 'Generating...' : 'Sulap Jadi Foto Studio'}</span>
                                 {!isLoading && (
                                     <span className="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">
-                                        Estimasi Biaya: $ {(massMode ? genCount : 1) * 0.01}
+                                        Costs ${(massMode ? genCount : 1) * PRICING.PRODUCT_IMAGE}
                                     </span>
                                 )}
                             </div>

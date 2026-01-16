@@ -273,3 +273,11 @@ export const FOMO_LOCATIONS = [
 ];
 
 export const FOMO_PRODUCTS = ['Akses Premium', 'Paket Lifetime', 'Bundle Studio'];
+
+export const PRICING = {
+    CHARACTER: 0.12,
+    PRODUCT_IMAGE: 0.10,
+    SCRIPT: 0.02,
+    TTS: 0.05,
+    VEO: 0.50,
+};

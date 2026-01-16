@@ -4,6 +4,7 @@ import { createContext, useContext, useState, ReactNode, useEffect } from 'react
 import { AppState, PanelType, ToastMessage } from '@/types';
 import { supabase } from './supabase';
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import { getFingerprint, getIPAddress } from './security';
 
 interface AppContextType extends AppState {
     setIsTrialMode: (value: boolean) => void;
@@ -21,6 +22,8 @@ interface AppContextType extends AppState {
     setBalance: (value: number) => void;
     deductBalance: (amount: number) => boolean;
     exchangeRate: number;
+    referralCode: string;
+    referralEarnings: number;
     user: SupabaseUser | null;
     loginWithGoogle: () => Promise<void>;
     logout: () => Promise<void>;
@@ -37,7 +40,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [userEmail, setUserEmail] = useState('');
     const [toast, setToast] = useState<ToastMessage | null>(null);
     const [apiKey, setApiKey] = useState('');
-    const [balance, setBalance] = useState(10); // Start with $10.00
+    const [balance, setBalance] = useState(0.00); // Default 0 until fetched/claimed
+    const [referralCode, setReferralCode] = useState('');
+    const [referralEarnings, setReferralEarnings] = useState(0);
     const [exchangeRate, setExchangeRate] = useState(16000); // Default fallback
     const [user, setUser] = useState<SupabaseUser | null>(null);
 
@@ -93,7 +98,55 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
 
         return () => subscription.unsubscribe();
+        return () => subscription.unsubscribe();
     }, []);
+
+    // Sync Balance & Security Check
+    useEffect(() => {
+        if (!user) {
+            setBalance(0);
+            return;
+        }
+
+        const syncProfile = async () => {
+            try {
+                // 1. Check/Claim Free Trial (Security)
+                const ip = await getIPAddress();
+                const deviceHash = await getFingerprint();
+
+                // Call Secure RPC to attempt claim
+                const { data: claimStatus, error: claimError } = await supabase.rpc('claim_free_trial', {
+                    p_ip_address: ip,
+                    p_device_hash: deviceHash
+                });
+
+                if (claimStatus === 'ABUSE_DETECTED') {
+                    console.warn('[Security] Free Trial Denied: Abuse Detected (IP/Device Match)');
+                    // showToast('Free Trial ditolak: Device/IP sudah terdaftar', 'error'); 
+                    // Silent fail is better for UX, just show 0 balance
+                } else if (claimStatus === 'SUCCESS') {
+                    showToast('🎁 Free Trial Active: $0.35 Granted!', 'success');
+                }
+
+                // 2. Fetch Latest Profile Data
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('credits, referral_code, referral_earnings')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profile) {
+                    setBalance(profile.credits || 0);
+                    setReferralCode(profile.referral_code || '');
+                    setReferralEarnings(profile.referral_earnings || 0);
+                }
+            } catch (err) {
+                console.error('Failed to sync profile', err);
+            }
+        };
+
+        syncProfile();
+    }, [user]);
 
     const loginWithGoogle = async () => {
         const { error } = await supabase.auth.signInWithOAuth({
@@ -157,6 +210,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 setBalance,
                 deductBalance,
                 exchangeRate,
+                referralCode,
+                referralEarnings,
                 user,
                 loginWithGoogle,
                 logout,

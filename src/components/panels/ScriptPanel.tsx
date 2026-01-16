@@ -12,6 +12,7 @@ import {
     LANGUAGE_OPTIONS,
     STRUCTURE_OPTIONS,
     TTS_VOICES,
+    PRICING,
 } from '@/lib/constants';
 import GlassPanel from '@/components/ui/GlassPanel';
 import Select from '@/components/ui/Select';
@@ -90,7 +91,8 @@ export default function ScriptPanel() {
             return;
         }
 
-        if (!deductBalance(0.005)) return;
+
+        if (!deductBalance(PRICING.SCRIPT)) return;
         setIsLoading(true);
 
         let prompt = '';
@@ -176,7 +178,8 @@ SCENE 2... (and so on)`;
             return;
         }
 
-        if (!deductBalance(0.005)) return;
+
+        if (!deductBalance(PRICING.TTS)) return;
         setIsTtsLoading(true);
         try {
             // Extract audio text from script
@@ -456,7 +459,7 @@ SCENE 2... (and so on)`;
                         >
                             <div className="flex flex-col items-center">
                                 <span>{isLoading ? 'Generating...' : `Generate ${mode === 'script' ? 'Video Script' : mode === 'caption' ? 'Caption' : 'Hashtags'}`}</span>
-                                {!isLoading && <span className="text-[10px] opacity-70">Biaya: $0.005</span>}
+                                {!isLoading && <span className="text-[10px] opacity-70">Biaya: ${PRICING.SCRIPT}</span>}
                             </div>
                         </Button>
 
@@ -521,7 +524,7 @@ SCENE 2... (and so on)`;
                                         >
                                             <div className="flex flex-col items-center">
                                                 <span>{isTtsLoading ? 'Generating Audio...' : 'Generate Suara (TTS)'}</span>
-                                                {!isTtsLoading && <span className="text-[10px] opacity-70">Biaya: $0.005</span>}
+                                                {!isTtsLoading && <span className="text-[10px] opacity-70">Biaya: ${PRICING.TTS}</span>}
                                             </div>
                                         </Button>
 

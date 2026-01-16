@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '@/lib/context';
 import GlassPanel from '@/components/ui/GlassPanel';
+import FomoPopup from '@/components/FomoPopup';
 import { useState, useEffect } from 'react';
 
 interface LoginPageProps {
@@ -125,7 +126,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                             transition={{ delay: 0.1 }}
                             className="text-lg md:text-xl text-slate-400 leading-relaxed max-w-xl font-medium"
                         >
-                            Era affiliate manual sudah berakhir. Affimate Super Apps hadir membekali lo dengan **Augmented Creativity** — dari riset hingga produksi konten viral, biarkan AI kami yang mengeksekusi dengan kecepatan 5x lipat.
+                            Era affiliate manual sudah berakhir. Affimate Super Apps hadir membekali lo dengan <span className="text-white font-bold">Augmented Creativity</span> — dari riset hingga produksi konten viral, biarkan AI kami yang mengeksekusi dengan kecepatan 5x lipat.
                         </motion.p>
 
                         <motion.div
@@ -274,7 +275,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                                 Kecepatan <br /> Adalah <br /> Kunci Utama.
                             </h2>
                             <p className="text-white/80 text-lg font-medium leading-relaxed">
-                                Dalam dunia affiliate, siapa yang paling cepat merespon tren adalah pemenang. Affimate memberi lo **Agility** mutlak. Dari ide ke postingan cuma butuh hitungan detik.
+                                Dalam dunia affiliate, siapa yang paling cepat merespon tren adalah pemenang. Affimate memberi lo <span className="text-white font-bold">Agility</span> mutlak. Dari ide ke postingan cuma butuh hitungan detik.
                             </p>
                             <div className="flex items-center gap-6 pt-4">
                                 <div className="flex -space-x-4 pl-2">
@@ -338,6 +339,9 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                     </div>
                 </div>
             </section>
+
+            {/* --- FOMO POPUP --- */}
+            <FomoPopup demo={true} />
 
             {/* --- FOOTER --- */}
             <footer className="py-8 border-t border-white/5 px-4 bg-[#050911]">

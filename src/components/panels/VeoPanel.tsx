@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Video, UploadCloud, X, Clapperboard, Crown, Lock, Copy } from 'lucide-react';
 import { useApp } from '@/lib/context';
 import { generateVeoPrompt, fileToBase64 } from '@/lib/api';
-import { VEO_STYLES, VEO_SHOTS, VEO_CAMERA_MOVEMENTS } from '@/lib/constants';
+import { VEO_STYLES, VEO_SHOTS, VEO_CAMERA_MOVEMENTS, PRICING } from '@/lib/constants';
 import GlassPanel from '@/components/ui/GlassPanel';
 import Select from '@/components/ui/Select';
 import { Input, Textarea } from '@/components/ui/Input';
@@ -45,7 +45,8 @@ export default function VeoPanel() {
             return;
         }
 
-        if (!deductBalance(0.02)) return;
+
+        if (!deductBalance(PRICING.SCRIPT)) return;
         setIsLoading(true);
 
         const currentStyle = style;
@@ -206,7 +207,7 @@ ${currentDialogue ? `- Character Dialogue: "${currentDialogue}"` : ''}
                         >
                             <div className="flex flex-col items-center">
                                 <span>{isLoading ? 'Generating...' : 'Buat Prompt Video'}</span>
-                                {!isLoading && <span className="text-[10px] opacity-70">Biaya: $0.02</span>}
+                                {!isLoading && <span className="text-[10px] opacity-70">Biaya: ${PRICING.SCRIPT}</span>}
                             </div>
                         </Button>
                     </div>
