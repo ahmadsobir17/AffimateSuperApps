@@ -9,7 +9,8 @@ export interface Env {
 }
 
 // Image generation model
-const IMAGE_GENERATION_MODEL = 'google/gemini-2.5-flash-image-preview';
+// Image generation model - Flux is reliable and available on OpenRouter
+const IMAGE_GENERATION_MODEL = 'black-forest-labs/flux-1-schnell';
 
 // Simple MD5 implementation for Workers (no CryptoJS needed)
 async function md5(message: string): Promise<string> {
