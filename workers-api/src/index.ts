@@ -225,8 +225,8 @@ async function generateImageOpenRouter(
         body: JSON.stringify({
             model: IMAGE_GENERATION_MODEL,
             messages: [{ role: 'user', content: contentParts }],
-            // Nano Banana/Gemini Image models often need both modalities
-            modalities: ['image', 'text'],
+            // Try only 'image' to force pixel output
+            modalities: ['image'],
         }),
     });
 
@@ -237,9 +237,13 @@ async function generateImageOpenRouter(
     }
 
     const data = await response.json() as any;
-    const content = data.choices?.[0]?.message?.content;
+    // Debug log to see what OpenRouter actually returns
+    console.log('OpenRouter Response Data:', JSON.stringify(data).slice(0, 500));
 
-    // 1. Handle Array Response (Pixels/Image parts)
+    const choice = data.choices?.[0];
+    const content = choice?.message?.content;
+
+    // 1. Handle Array Response (Standard Nano Banana pixel output)
     if (Array.isArray(content)) {
         for (const part of content) {
             if (part.type === 'image_url' && part.image_url?.url) {
@@ -248,7 +252,11 @@ async function generateImageOpenRouter(
         }
     }
 
-    // 2. Handle String Response (Description fallback)
+    // 2. Handle Direct URL in choice (Some providers)
+    if (choice?.image_url?.url) return choice.image_url.url;
+    if (choice?.url) return choice.url;
+
+    // 3. Handle String Response (Description fallback)
     if (typeof content === 'string' && content.trim().length > 0) {
         return `[TEXT_DESCRIPTION]\n${content.trim()}`;
     }
