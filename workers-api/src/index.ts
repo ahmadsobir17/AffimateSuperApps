@@ -206,45 +206,78 @@ async function generateImageKieAI(
     inputImages?: string[]
 ): Promise<string | null> {
     try {
-        const response = await fetch('https://api.kie.ai/v1/image/generations', {
+        const createTaskUrl = 'https://api.kie.ai/api/v1/jobs/createTask';
+
+        // Prepare input object
+        const input: any = {
+            prompt: prompt,
+            output_format: 'png',
+            image_size: '1:1'
+        };
+
+        // If reference images are provided (image-to-image)
+        if (inputImages && inputImages.length > 0) {
+            input.image = inputImages[0].startsWith('data:') ? inputImages[0] : `data:image/png;base64,${inputImages[0]}`;
+        }
+
+        const createResp = await fetch(createTaskUrl, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'google/gemini-2.5-flash-image',
-                prompt: prompt,
-                image: inputImages && inputImages.length > 0 ? inputImages[0] : undefined,
-                n: 1,
-                size: '1024x1024'
+                model: 'google/nano-banana',
+                input: input
             })
         });
 
-        if (!response.ok) {
-            const err = await response.text();
-            console.error('Kie.ai Error:', err);
+        if (!createResp.ok) {
+            const err = await createResp.text();
+            console.error('Kie.ai Create Task Error:', err);
             return null;
         }
 
-        const data = await response.json() as any;
-        if (data.data?.[0]?.url) return data.data[0].url;
-        if (data.url) return data.url;
+        const createData = await createResp.json() as any;
+        const taskId = createData.data?.taskId;
 
-        if (data.task_id) {
-            // Simple polling for async tasks
-            for (let i = 0; i < 15; i++) {
-                await new Promise(r => setTimeout(r, 2000));
-                const pollResp = await fetch(`https://api.kie.ai/v1/tasks/${data.task_id}`, {
-                    headers: { 'Authorization': `Bearer ${apiKey}` }
-                });
-                const pollData = await pollResp.json() as any;
-                if (pollData.status === 'succeeded') {
-                    return pollData.result?.url || pollData.url;
-                }
-                if (pollData.status === 'failed') break;
-            }
+        if (!taskId) {
+            console.error('Kie.ai: No taskId returned', createData);
+            return null;
         }
+
+        // Poll for results
+        const pollUrl = `https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`;
+
+        for (let i = 0; i < 20; i++) { // Increase polling attempts (max ~40 seconds)
+            await new Promise(r => setTimeout(r, 2000));
+
+            const pollResp = await fetch(pollUrl, {
+                headers: { 'Authorization': `Bearer ${apiKey}` }
+            });
+
+            if (!pollResp.ok) continue;
+
+            const pollData = await pollResp.json() as any;
+            const state = pollData.data?.state;
+
+            if (state === 'success') {
+                const resultJsonStr = pollData.data.resultJson;
+                if (resultJsonStr) {
+                    try {
+                        const resultObj = JSON.parse(resultJsonStr);
+                        return resultObj.resultUrls?.[0] || null;
+                    } catch (e) {
+                        console.error('Kie.ai: Failed to parse resultJson', e);
+                    }
+                }
+            } else if (state === 'failed') {
+                console.error('Kie.ai: Task failed', pollData.data?.errorMsg);
+                break;
+            }
+            // If still processing, continue loop
+        }
+
         return null;
     } catch (error) {
         console.error('Kie.ai Exception:', error);
