@@ -7,6 +7,47 @@
 
 import { API_BASE_URL } from './apiConfig';
 
+// Helper for robust fetch with error handling
+async function fetchLLM(body: any) {
+    const url = `${API_BASE_URL}/llm`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+
+        const contentType = response.headers.get('content-type');
+        const text = await response.text();
+
+        if (!response.ok) {
+            throw new Error(`Server Error (${response.status}): ${text.slice(0, 100)}...`);
+        }
+
+        if (!text) {
+            throw new Error('Server returned empty response');
+        }
+
+        if (!contentType || !contentType.includes('application/json')) {
+            console.error('Non-JSON Response:', text);
+            throw new Error(`Invalid response format (not JSON). Response preview: ${text.slice(0, 50)}...`);
+        }
+
+        try {
+            const data = JSON.parse(text);
+            if (!data.success) throw new Error(data.error || 'Unknown API error');
+            return data.result;
+        } catch (e) {
+            console.error('JSON Parse Error:', e, 'Raw Text:', text);
+            throw new Error('Failed to parse API response');
+        }
+    } catch (error) {
+        console.error('fetchLLM Error:', error);
+        throw error;
+    }
+}
+
 // ============================================
 // TEXT GENERATION FUNCTIONS
 // ============================================
@@ -17,76 +58,34 @@ import { API_BASE_URL } from './apiConfig';
 export async function analyzeProductOR(images: string[]): Promise<string | null> {
     const prompt = 'Analisa foto produk ini secara detail. Deskripsikan material, warna, bentuk, tekstur, dan fitur utamanya dalam satu paragraf ringkas untuk keperluan fotografi komersial. Fokus pada visual fisik.';
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/llm`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'vision',
-                imageBase64: images[0],
-                prompt: images.length > 1
-                    ? `${prompt} (Ada ${images.length} foto referensi)`
-                    : prompt,
-            }),
-        });
-
-        const data = await response.json();
-        if (!data.success) throw new Error(data.error);
-        return data.result;
-    } catch (error) {
-        console.error('analyzeProductOR error:', error);
-        throw error;
-    }
+    return fetchLLM({
+        action: 'vision',
+        imageBase64: images[0],
+        prompt: images.length > 1 ? `${prompt} (Ada ${images.length} foto referensi)` : prompt,
+    });
 }
 
 /**
  * Generate video script, caption, or hashtags
  */
 export async function generateScriptOR(prompt: string, images: string[]): Promise<string | null> {
-    try {
-        const action = images.length > 0 ? 'vision' : 'generate';
-
-        const response = await fetch(`${API_BASE_URL}/llm`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action,
-                imageBase64: images[0],
-                prompt,
-            }),
-        });
-
-        const data = await response.json();
-        if (!data.success) throw new Error(data.error);
-        return data.result;
-    } catch (error) {
-        console.error('generateScriptOR error:', error);
-        throw error;
-    }
+    const action = images.length > 0 ? 'vision' : 'generate';
+    return fetchLLM({
+        action,
+        imageBase64: images[0],
+        prompt,
+    });
 }
 
 /**
  * Generate VEO/Sora video prompt from image
  */
 export async function generateVeoPromptOR(prompt: string, imageBase64: string): Promise<string | null> {
-    try {
-        const response = await fetch(`${API_BASE_URL}/llm`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'vision',
-                imageBase64,
-                prompt,
-            }),
-        });
-
-        const data = await response.json();
-        if (!data.success) throw new Error(data.error);
-        return data.result;
-    } catch (error) {
-        console.error('generateVeoPromptOR error:', error);
-        throw error;
-    }
+    return fetchLLM({
+        action: 'vision',
+        imageBase64,
+        prompt,
+    });
 }
 
 // ============================================
@@ -102,49 +101,23 @@ export async function generateProductImageOR(
     backImage?: string | null,
     customModelImage?: string | null
 ): Promise<string | null> {
-    try {
-        const response = await fetch(`${API_BASE_URL}/llm`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'product-image',
-                prompt,
-                imageBase64: frontImage,
-                backImage,
-                customModelImage,
-            }),
-        });
-
-        const data = await response.json();
-        if (!data.success) throw new Error(data.error);
-        return data.result;
-    } catch (error) {
-        console.error('generateProductImageOR error:', error);
-        throw error;
-    }
+    return fetchLLM({
+        action: 'product-image',
+        prompt,
+        imageBase64: frontImage,
+        backImage,
+        customModelImage,
+    });
 }
 
 /**
  * Generate character/human image using Gemini 2.5 Flash Image via OpenRouter
  */
 export async function generateCharacterOR(prompt: string): Promise<string | null> {
-    try {
-        const response = await fetch(`${API_BASE_URL}/llm`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'image',
-                prompt,
-            }),
-        });
-
-        const data = await response.json();
-        if (!data.success) throw new Error(data.error);
-        return data.result;
-    } catch (error) {
-        console.error('generateCharacterOR error:', error);
-        throw error;
-    }
+    return fetchLLM({
+        action: 'image',
+        prompt,
+    });
 }
 
 // ============================================
