@@ -245,13 +245,7 @@ async function generateImageOpenRouter(
     if (Array.isArray(content)) {
         for (const part of content) {
             if (part.type === 'image_url' && part.image_url?.url) {
-                const url = part.image_url.url;
-                // If it's base64 data:image/...
-                if (url.startsWith('data:')) {
-                    return url.split(',')[1];
-                }
-                // If it's a URL
-                return url;
+                return part.image_url.url;
             }
         }
     }
